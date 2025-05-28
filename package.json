@@ -1,0 +1,23 @@
+{
+  "name": "lista-de-compras",
+  "version": "1.0.0",
+  "description": "Um aplicativos para gerenciar um carrinho de compras em supermercados.",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LuEdu3/Lista-de-Compras.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/LuEdu3/Lista-de-Compras/issues"
+  },
+  "homepage": "https://github.com/LuEdu3/Lista-de-Compras#readme",
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
