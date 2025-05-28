@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Lista de Compras</title>
+    <style>
+        .in-cart {
+            text-decoration: line-through;
+            color: gray;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Lista de Compras</h1>
+    <input id="productInput" type="text" placeholder="Digite o nome do produto">
+    <button onclick="addProduct()">Adicionar</button>
+    <ul id="productList"></ul>
+
+    <script>
+        async function fetchProducts() {
+            const res = await fetch('/products');
+            const products = await res.json();
+            const ul = document.getElementById('productList');
+            ul.innerHTML = '';
+            products.forEach((product, index) => {
+                const li = document.createElement('li');
+                li.textContent = product.name;
+                if (product.inCart) li.classList.add('in-cart');
+                li.onclick = () => toggleProduct(index);
+                ul.appendChild(li);
+            });
+        }
+
+        async function addProduct() {
+            const input = document.getElementById('productInput');
+            const name = input.value.trim();
+            if (!name) return;
+            await fetch('/products', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name })
+            });
+            input.value = '';
+            fetchProducts();
+        }
+
+        async function toggleProduct(index) {
+            await fetch('/toggle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ index })
+            });
+            fetchProducts();
+        }
+
+        fetchProducts();
+    </script>
+</body>
+
+</html>
