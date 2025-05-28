@@ -3,60 +3,171 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lista de Compras</title>
-    <style>
-        .in-cart {
-            text-decoration: line-through;
-            color: gray;
-        }
-    </style>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 </head>
 
 <body>
-    <h1>Lista de Compras</h1>
-    <input id="productInput" type="text" placeholder="Digite o nome do produto">
-    <button onclick="addProduct()">Adicionar</button>
-    <ul id="productList"></ul>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <h1 class="app-title">
+                <i class="fas fa-shopping-cart"></i>
+                Lista de Compras
+            </h1>
+            <div class="header-stats">
+                <span class="total-items">0 itens</span>
+                <span class="total-price">R$ 0,00</span>
+            </div>
+        </div>
+    </header>
 
-    <script>
-        async function fetchProducts() {
-            const res = await fetch('/products');
-            const products = await res.json();
-            const ul = document.getElementById('productList');
-            ul.innerHTML = '';
-            products.forEach((product, index) => {
-                const li = document.createElement('li');
-                li.textContent = product.name;
-                if (product.inCart) li.classList.add('in-cart');
-                li.onclick = () => toggleProduct(index);
-                ul.appendChild(li);
-            });
-        }
+    <!-- Add Item Form -->
+    <section class="add-item-section">
+        <form class="add-item-form" id="addItemForm">
+            <div class="input-group">
+                <input type="text" id="itemName" placeholder="Nome do produto" class="item-input" required>
+                <input type="number" id="itemQuantity" placeholder="Qtd" class="quantity-input" min="1" value="1">
+                <input type="number" id="itemPrice" placeholder="Preço" class="price-input" step="0.01" min="0">
+            </div>
+            <button type="submit" class="add-btn">
+                <i class="fas fa-plus"></i>
+                Adicionar
+            </button>
+        </form>
+    </section>
 
-        async function addProduct() {
-            const input = document.getElementById('productInput');
-            const name = input.value.trim();
-            if (!name) return;
-            await fetch('/products', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name })
-            });
-            input.value = '';
-            fetchProducts();
-        }
+    <!-- Categories Filter -->
+    <section class="categories-section">
+        <div class="categories-filter">
+            <button class="category-btn active" data-category="all">
+                <i class="fas fa-th-large"></i>
+                Todos
+            </button>
+            <button class="category-btn" data-category="frutas">
+                <i class="fas fa-apple-alt"></i>
+                Frutas
+            </button>
+            <button class="category-btn" data-category="verduras">
+                <i class="fas fa-leaf"></i>
+                Verduras
+            </button>
+            <button class="category-btn" data-category="carnes">
+                <i class="fas fa-drumstick-bite"></i>
+                Carnes
+            </button>
+            <button class="category-btn" data-category="laticinios">
+                <i class="fas fa-cheese"></i>
+                Laticínios
+            </button>
+            <button class="category-btn" data-category="outros">
+                <i class="fas fa-box"></i>
+                Outros
+            </button>
+        </div>
+    </section>
 
-        async function toggleProduct(index) {
-            await fetch('/toggle', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ index })
-            });
-            fetchProducts();
-        }
+    <!-- Shopping List -->
+    <main class="shopping-list-container">
+        <div class="list-header">
+            <h2>Minha Lista</h2>
+            <div class="list-actions">
+                <button class="action-btn" id="clearCompleted">
+                    <i class="fas fa-check-double"></i>
+                    Limpar Concluídos
+                </button>
+                <button class="action-btn danger" id="clearAll">
+                    <i class="fas fa-trash"></i>
+                    Limpar Tudo
+                </button>
+            </div>
+        </div>
 
-        fetchProducts();
-    </script>
+        <ul class="shopping-list" id="shoppingList">
+            <!-- Items serão adicionados dinamicamente -->
+        </ul>
+
+        <div class="empty-state" id="emptyState">
+            <i class="fas fa-shopping-basket"></i>
+            <h3>Sua lista está vazia</h3>
+            <p>Adicione itens acima para começar suas compras</p>
+        </div>
+    </main>
+
+    <!-- Summary -->
+    <section class="summary-section">
+        <div class="summary-card">
+            <div class="summary-item">
+                <span class="summary-label">Total de Itens:</span>
+                <span class="summary-value" id="summaryItems">0</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Concluídos:</span>
+                <span class="summary-value" id="summaryCompleted">0</span>
+            </div>
+            <div class="summary-item total">
+                <span class="summary-label">Total Estimado:</span>
+                <span class="summary-value" id="summaryTotal">R$ 0,00</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Floating Action Button -->
+    <button class="fab" id="fabAdd">
+        <i class="fas fa-plus"></i>
+    </button>
+
+    <!-- Category Modal -->
+    <div class="modal-overlay" id="categoryModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Selecionar Categoria</h3>
+                <button class="modal-close" id="closeCategoryModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="category-grid">
+                    <button class="category-option" data-value="frutas">
+                        <i class="fas fa-apple-alt"></i>
+                        <span>Frutas</span>
+                    </button>
+                    <button class="category-option" data-value="verduras">
+                        <i class="fas fa-leaf"></i>
+                        <span>Verduras</span>
+                    </button>
+                    <button class="category-option" data-value="carnes">
+                        <i class="fas fa-drumstick-bite"></i>
+                        <span>Carnes</span>
+                    </button>
+                    <button class="category-option" data-value="laticinios">
+                        <i class="fas fa-cheese"></i>
+                        <span>Laticínios</span>
+                    </button>
+                    <button class="category-option" data-value="padaria">
+                        <i class="fas fa-bread-slice"></i>
+                        <span>Padaria</span>
+                    </button>
+                    <button class="category-option" data-value="limpeza">
+                        <i class="fas fa-spray-can"></i>
+                        <span>Limpeza</span>
+                    </button>
+                    <button class="category-option" data-value="bebidas">
+                        <i class="fas fa-wine-bottle"></i>
+                        <span>Bebidas</span>
+                    </button>
+                    <button class="category-option" data-value="outros">
+                        <i class="fas fa-box"></i>
+                        <span>Outros</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/script.js"></script>
 </body>
 
 </html>
