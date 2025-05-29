@@ -543,16 +543,6 @@ function loadListsFromStorage() {
     userLists = data ? JSON.parse(data) : [];
 }
 
-// Adicionar botão para voltar à seleção de listas
-if (!document.getElementById('backToListsBtn')) {
-    const backBtn = document.createElement('button');
-    backBtn.id = 'backToListsBtn';
-    backBtn.className = 'action-btn';
-    backBtn.innerHTML = '<i class="fas fa-arrow-left"></i> Minhas Listas';
-    backBtn.onclick = showListSelectionScreen;
-    document.querySelector('.list-header .list-actions')?.appendChild(backBtn);
-}
-
 // Adicionar CSS para animação de pulse
 const style = document.createElement('style');
 style.textContent = `
