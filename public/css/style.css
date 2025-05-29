@@ -535,6 +535,51 @@ body {
     color: var(--text-primary);
 }
 
+/* User Lists */
+.user-lists {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    align-items: stretch;
+}
+
+.list-card {
+    background: var(--surface);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-light);
+    padding: 1.5rem 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+    cursor: pointer;
+    transition: var(--transition);
+    border: 2px solid transparent;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.list-card-title {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.2rem;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    display: block;
+    max-width: 100%;
+}
+
+@media (min-width: 600px) {
+    .list-card-title {
+        /* Limita visualmente a largura do texto, mas permite quebra */
+        max-width: 40ch;
+    }
+}
+
 /* Animations */
 @keyframes slideIn {
     from {
