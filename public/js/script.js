@@ -2,6 +2,8 @@
 let shoppingList = [];
 let currentFilter = 'all';
 let editingItem = null;
+let currentListId = null;
+let userLists = [];
 
 // Elementos DOM
 const elements = {
@@ -22,7 +24,18 @@ const elements = {
     fab: document.getElementById('fabAdd'),
     categoryModal: document.getElementById('categoryModal'),
     closeCategoryModal: document.getElementById('closeCategoryModal'),
-    categoryOptions: document.querySelectorAll('.category-option')
+    categoryOptions: document.querySelectorAll('.category-option'),
+    listSelectionScreen: document.getElementById('listSelectionScreen'),
+    userLists: document.getElementById('userLists'),
+    createListForm: document.getElementById('createListForm'),
+    newListName: document.getElementById('newListName'),
+    header: document.querySelector('.header'),
+    addItemSection: document.querySelector('.add-item-section'),
+    categoriesSection: document.querySelector('.categories-section'),
+    shoppingListContainer: document.querySelector('.shopping-list-container'),
+    summarySection: document.querySelector('.summary-section'),
+    fab: document.getElementById('fabAdd'),
+    backToListsBtn: document.getElementById('backToListsBtn')
 };
 
 // Dados das categorias
@@ -39,10 +52,9 @@ const categories = {
 
 // Inicialização
 document.addEventListener('DOMContentLoaded', function () {
-    loadFromStorage();
+    loadListsFromStorage();
+    showListSelectionScreen();
     setupEventListeners();
-    updateDisplay();
-    updateSummary();
 });
 
 // Event Listeners
@@ -86,6 +98,15 @@ function setupEventListeners() {
 
     // Detectar quando o usuário está digitando para sugerir categoria
     elements.itemName.addEventListener('input', suggestCategory);
+
+    // Listas
+    elements.createListForm.addEventListener('submit', handleCreateList);
+    elements.userLists.addEventListener('click', handleSelectList);
+
+    // Botão de voltar para listas
+    if (elements.backToListsBtn) {
+        elements.backToListsBtn.addEventListener('click', showListSelectionScreen);
+    }
 }
 
 // Funções principais
@@ -434,74 +455,102 @@ function selectCategory(category) {
 
 // Funções de persistência
 function saveToStorage() {
-    try {
-        const data = {
-            shoppingList: shoppingList,
-            currentFilter: currentFilter,
-            lastSaved: new Date().toISOString()
-        };
-        localStorage.setItem('shoppingListApp', JSON.stringify(data));
-    } catch (error) {
-        console.error('Erro ao salvar dados:', error);
-        showNotification('Erro ao salvar dados', 'error');
-    }
+    if (!currentListId) return;
+    const data = {
+        shoppingList: shoppingList,
+        currentFilter: currentFilter,
+        lastSaved: new Date().toISOString()
+    };
+    localStorage.setItem('shoppingListApp_' + currentListId, JSON.stringify(data));
 }
 
 function loadFromStorage() {
-    try {
-        const data = localStorage.getItem('shoppingListApp');
-        if (data) {
-            const parsed = JSON.parse(data);
-            shoppingList = parsed.shoppingList || [];
-            currentFilter = parsed.currentFilter || 'all';
-
-            // Atualizar categoria ativa
-            setActiveCategory(currentFilter);
-        }
-    } catch (error) {
-        console.error('Erro ao carregar dados:', error);
-        showNotification('Erro ao carregar dados salvos', 'error');
+    if (!currentListId) return;
+    const data = localStorage.getItem('shoppingListApp_' + currentListId);
+    if (data) {
+        const parsed = JSON.parse(data);
+        shoppingList = parsed.shoppingList || [];
+        currentFilter = parsed.currentFilter || 'all';
+        setActiveCategory(currentFilter);
+    } else {
         shoppingList = [];
         currentFilter = 'all';
+        setActiveCategory('all');
     }
 }
 
-// Funções de exportação/importação
-function exportList() {
-    const dataStr = JSON.stringify(shoppingList, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(dataBlob);
-    link.download = `lista-compras-${new Date().toISOString().split('T')[0]}.json`;
-    link.click();
-
-    URL.revokeObjectURL(link.href);
-    showNotification('Lista exportada com sucesso!', 'success');
+// Funções de listas
+function handleCreateList(e) {
+    e.preventDefault();
+    const name = elements.newListName.value.trim();
+    if (!name) return;
+    const id = Date.now().toString();
+    userLists.push({ id, name });
+    saveListsToStorage();
+    renderUserLists();
+    elements.newListName.value = '';
 }
 
-function importList(event) {
-    const file = event.target.files[0];
-    if (!file) return;
+function handleSelectList(e) {
+    if (e.target.tagName === 'LI' || e.target.closest('li')) {
+        const li = e.target.closest('li');
+        const listId = li.dataset.id;
+        openList(listId);
+    }
+}
 
-    const reader = new FileReader();
-    reader.onload = function (e) {
-        try {
-            const importedList = JSON.parse(e.target.result);
-            if (Array.isArray(importedList)) {
-                shoppingList = importedList;
-                updateDisplay();
-                updateSummary();
-                saveToStorage();
-                showNotification('Lista importada com sucesso!', 'success');
-            } else {
-                throw new Error('Formato inválido');
-            }
-        } catch (error) {
-            showNotification('Erro ao importar lista', 'error');
-        }
-    };
-    reader.readAsText(file);
+function openList(listId) {
+    currentListId = listId;
+    loadFromStorage();
+    showMainScreen();
+    updateDisplay();
+    updateSummary();
+}
+
+function showListSelectionScreen() {
+    elements.listSelectionScreen.style.display = 'flex';
+    elements.header.style.display = 'none';
+    elements.addItemSection.style.display = 'none';
+    elements.categoriesSection.style.display = 'none';
+    elements.shoppingListContainer.style.display = 'none';
+    elements.summarySection.style.display = 'none';
+    elements.fab.style.display = 'none';
+    if (elements.backToListsBtn) elements.backToListsBtn.style.display = 'none';
+    renderUserLists();
+}
+
+function showMainScreen() {
+    elements.listSelectionScreen.style.display = 'none';
+    elements.header.style.display = '';
+    elements.addItemSection.style.display = '';
+    elements.categoriesSection.style.display = '';
+    elements.shoppingListContainer.style.display = '';
+    elements.summarySection.style.display = '';
+    elements.fab.style.display = '';
+    if (elements.backToListsBtn) elements.backToListsBtn.style.display = '';
+}
+
+function renderUserLists() {
+    elements.userLists.innerHTML = userLists.map(list => `<li data-id="${list.id}">${list.name}</li>`).join('');
+}
+
+function saveListsToStorage() {
+    localStorage.setItem('shoppingListsMeta', JSON.stringify(userLists));
+}
+
+function loadListsFromStorage() {
+    const data = localStorage.getItem('shoppingListsMeta');
+    userLists = data ? JSON.parse(data) : [];
+}
+
+// Adicionar botão para voltar à seleção de listas
+if (!document.getElementById('backToListsBtn')) {
+    const backBtn = document.createElement('button');
+    backBtn.id = 'backToListsBtn';
+    backBtn.className = 'action-btn';
+    backBtn.innerHTML = '<i class="fas fa-arrow-left"></i> Minhas Listas';
+    backBtn.onclick = showListSelectionScreen;
+    document.querySelector('.list-header .list-actions')?.appendChild(backBtn);
 }
 
 // Adicionar CSS para animação de pulse
