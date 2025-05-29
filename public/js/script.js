@@ -33,7 +33,13 @@ const elements = {
     categoriesSection: document.querySelector('.categories-section'),
     shoppingListContainer: document.querySelector('.shopping-list-container'),
     summarySection: document.querySelector('.summary-section'),
-    backToListsBtn: document.getElementById('backToListsBtn')
+    backToListsBtn: document.getElementById('backToListsBtn'),
+    openCreateListModalBtn: document.getElementById('openCreateListModalBtn'),
+    createListModal: document.getElementById('createListModal'),
+    closeCreateListModal: document.getElementById('closeCreateListModal'),
+    cancelCreateListModal: document.getElementById('cancelCreateListModal'),
+    createListModalForm: document.getElementById('createListModalForm'),
+    modalNewListName: document.getElementById('modalNewListName')
 };
 
 // Dados das categorias
@@ -99,6 +105,31 @@ function setupEventListeners() {
     if (elements.backToListsBtn) {
         elements.backToListsBtn.addEventListener('click', showListSelectionScreen);
     }
+
+    // Modal de criação de lista
+    elements.openCreateListModalBtn.addEventListener('click', openCreateListModal);
+    elements.closeCreateListModal.addEventListener('click', closeCreateListModalFn);
+    elements.cancelCreateListModal.addEventListener('click', closeCreateListModalFn);
+
+    // Fechar modal com ESC
+    elements.createListModal.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            closeCreateListModalFn();
+        }
+    });
+
+    // Submeter criação de lista
+    elements.createListModalForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        const name = elements.modalNewListName.value.trim();
+        if (name) {
+            // Função para criar lista (deve existir no seu código)
+            createNewList(name);
+            closeCreateListModalFn();
+        } else {
+            elements.modalNewListName.focus();
+        }
+    });
 }
 
 // Funções principais
@@ -444,6 +475,44 @@ function selectCategory(category) {
     setActiveCategory(category);
     closeModal();
 }
+
+// Modal de criação de lista
+function openCreateListModal() {
+    elements.createListModal.classList.add('active');
+    elements.createListModal.setAttribute('aria-hidden', 'false');
+    setTimeout(() => elements.modalNewListName.focus(), 100);
+}
+
+function closeCreateListModalFn() {
+    elements.createListModal.classList.remove('active');
+    elements.createListModal.setAttribute('aria-hidden', 'true');
+    elements.openCreateListModalBtn.focus();
+    elements.createListModalForm.reset();
+}
+
+elements.openCreateListModalBtn.addEventListener('click', openCreateListModal);
+elements.closeCreateListModal.addEventListener('click', closeCreateListModalFn);
+elements.cancelCreateListModal.addEventListener('click', closeCreateListModalFn);
+
+// Fechar modal com ESC
+elements.createListModal.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+        closeCreateListModalFn();
+    }
+});
+
+// Submeter criação de lista
+elements.createListModalForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    const name = elements.modalNewListName.value.trim();
+    if (name) {
+        // Função para criar lista (deve existir no seu código)
+        createNewList(name);
+        closeCreateListModalFn();
+    } else {
+        elements.modalNewListName.focus();
+    }
+});
 
 // Funções de persistência
 function saveToStorage() {
