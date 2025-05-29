@@ -21,7 +21,6 @@ const elements = {
     clearCompleted: document.getElementById('clearCompleted'),
     clearAll: document.getElementById('clearAll'),
     categoryBtns: document.querySelectorAll('.category-btn'),
-    fab: document.getElementById('fabAdd'),
     categoryModal: document.getElementById('categoryModal'),
     closeCategoryModal: document.getElementById('closeCategoryModal'),
     categoryOptions: document.querySelectorAll('.category-option'),
@@ -34,7 +33,6 @@ const elements = {
     categoriesSection: document.querySelector('.categories-section'),
     shoppingListContainer: document.querySelector('.shopping-list-container'),
     summarySection: document.querySelector('.summary-section'),
-    fab: document.getElementById('fabAdd'),
     backToListsBtn: document.getElementById('backToListsBtn')
 };
 
@@ -72,12 +70,6 @@ function setupEventListeners() {
     // Botões de ação
     elements.clearCompleted.addEventListener('click', clearCompletedItems);
     elements.clearAll.addEventListener('click', clearAllItems);
-
-    // FAB
-    elements.fab.addEventListener('click', () => {
-        elements.itemName.focus();
-        elements.itemName.scrollIntoView({ behavior: 'smooth' });
-    });
 
     // Modal de categoria
     elements.closeCategoryModal.addEventListener('click', closeModal);
@@ -514,7 +506,6 @@ function showListSelectionScreen() {
     elements.categoriesSection.style.display = 'none';
     elements.shoppingListContainer.style.display = 'none';
     elements.summarySection.style.display = 'none';
-    elements.fab.style.display = 'none';
     if (elements.backToListsBtn) elements.backToListsBtn.style.display = 'none';
     renderUserLists();
 }
@@ -526,7 +517,6 @@ function showMainScreen() {
     elements.categoriesSection.style.display = '';
     elements.shoppingListContainer.style.display = '';
     elements.summarySection.style.display = '';
-    elements.fab.style.display = '';
     if (elements.backToListsBtn) elements.backToListsBtn.style.display = '';
 }
 
