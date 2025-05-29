@@ -521,7 +521,11 @@ function showMainScreen() {
 }
 
 function renderUserLists() {
-    elements.userLists.innerHTML = userLists.map(list => `<li data-id="${list.id}">${list.name}</li>`).join('');
+    elements.userLists.innerHTML = userLists.map(list => `
+        <li class="list-card" data-id="${list.id}">
+            <div class="list-card-title">${escapeHtml(list.name)}</div>
+        </li>
+    `).join('');
 }
 
 function saveListsToStorage() {
