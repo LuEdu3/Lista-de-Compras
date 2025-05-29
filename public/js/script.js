@@ -34,7 +34,8 @@ const elements = {
     categoriesSection: document.querySelector('.categories-section'),
     shoppingListContainer: document.querySelector('.shopping-list-container'),
     summarySection: document.querySelector('.summary-section'),
-    fab: document.getElementById('fabAdd')
+    fab: document.getElementById('fabAdd'),
+    backToListsBtn: document.getElementById('backToListsBtn')
 };
 
 // Dados das categorias
@@ -101,6 +102,11 @@ function setupEventListeners() {
     // Listas
     elements.createListForm.addEventListener('submit', handleCreateList);
     elements.userLists.addEventListener('click', handleSelectList);
+
+    // Botão de voltar para listas
+    if (elements.backToListsBtn) {
+        elements.backToListsBtn.addEventListener('click', showListSelectionScreen);
+    }
 }
 
 // Funções principais
@@ -509,6 +515,7 @@ function showListSelectionScreen() {
     elements.shoppingListContainer.style.display = 'none';
     elements.summarySection.style.display = 'none';
     elements.fab.style.display = 'none';
+    if (elements.backToListsBtn) elements.backToListsBtn.style.display = 'none';
     renderUserLists();
 }
 
@@ -520,6 +527,7 @@ function showMainScreen() {
     elements.shoppingListContainer.style.display = '';
     elements.summarySection.style.display = '';
     elements.fab.style.display = '';
+    if (elements.backToListsBtn) elements.backToListsBtn.style.display = '';
 }
 
 function renderUserLists() {
