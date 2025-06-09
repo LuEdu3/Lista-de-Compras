@@ -20,6 +20,7 @@
   "dependencies": {
     "body-parser": "^2.2.0",
     "cors": "^2.8.5",
-    "express": "^4.18.4"
+    "express": "^4.18.4",
+    "mysql2": "^3.14.1"
   }
 }

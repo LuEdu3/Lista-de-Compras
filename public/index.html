@@ -17,10 +17,30 @@
         <div class="list-selection-container">
             <h2>Minhas Listas</h2>
             <ul id="userLists" class="user-lists"></ul>
-            <form id="createListForm" class="create-list-form">
-                <input type="text" id="newListName" placeholder="Nome da nova lista" required>
-                <button type="submit">Criar Lista</button>
-            </form>
+            <!-- Botão para criar nova lista -->
+            <button id="openCreateListModalBtn" class="create-list-btn">Criar Lista</button>
+
+            <!-- Modal de criação de lista -->
+            <div class="modal-overlay" id="createListModal" tabindex="-1">
+                <div class="modal create-list-modal" role="dialog" aria-modal="true"
+                    aria-labelledby="createListModalTitle">
+                    <div class="modal-header">
+                        <h3 id="createListModalTitle">Criar Nova Lista</h3>
+                        <button class="modal-close" id="closeCreateListModal" aria-label="Fechar">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <form id="createListModalForm" class="modal-body">
+                        <input type="text" id="modalNewListName" placeholder="Nome da nova lista" required autofocus
+                            maxlength="60">
+                        <div class="modal-actions">
+                            <button type="submit" class="modal-create-btn">Criar</button>
+                            <button type="button" class="modal-cancel-btn" id="cancelCreateListModal">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <!-- Fim do modal de criação de lista -->
         </div>
     </div>
 
@@ -129,7 +149,6 @@
         </div>
     </section>
 
-    
     <!-- Category Modal -->
     <div class="modal-overlay" id="categoryModal">
         <div class="modal">

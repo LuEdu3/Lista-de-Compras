@@ -431,152 +431,215 @@ body {
     transform: scale(0.95);
 }
 
-/* Modal */
+/* Modal overlay */
 .modal-overlay {
+    display: none;
     position: fixed;
-    top: 0;
+    z-index: 1000;
     left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
+    top: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.4);
     align-items: center;
     justify-content: center;
-    z-index: 2000;
-    opacity: 0;
-    visibility: hidden;
-    transition: var(--transition);
-    padding: 1rem;
+    transition: opacity 0.2s;
 }
 
 .modal-overlay.active {
-    opacity: 1;
-    visibility: visible;
+    display: flex;
 }
 
+/* Modal */
 .modal {
-    background: var(--surface);
-    border-radius: var(--border-radius);
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 32px rgba(0, 0, 0, 0.18);
     max-width: 400px;
-    width: 100%;
-    max-height: 80vh;
-    overflow-y: auto;
-    transform: scale(0.9);
-    transition: var(--transition);
+    width: 90vw;
+    padding: 0;
+    animation: modalIn 0.2s;
+    outline: none;
 }
 
-.modal-overlay.active .modal {
-    transform: scale(1);
+@keyframes modalIn {
+    from {
+        transform: translateY(40px) scale(0.98);
+        opacity: 0;
+    }
+
+    to {
+        transform: none;
+        opacity: 1;
+    }
 }
 
 .modal-header {
-    padding: 1rem;
-    border-bottom: 1px solid var(--border-color);
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    justify-content: space-between;
+    padding: 1.2rem 1.5rem 0.5rem 1.5rem;
+    border-bottom: 1px solid #eee;
 }
 
 .modal-header h3 {
     margin: 0;
-    color: var(--text-primary);
+    font-size: 1.2rem;
+    font-weight: 600;
 }
 
 .modal-close {
     background: none;
     border: none;
-    font-size: 1.5rem;
+    font-size: 1.3rem;
+    color: #888;
     cursor: pointer;
-    color: var(--text-secondary);
-    padding: 0.25rem;
+    padding: 0.2rem 0.5rem;
     border-radius: 4px;
+    transition: background 0.15s;
 }
 
-.modal-close:hover {
-    background: var(--background);
+.modal-close:focus {
+    outline: 2px solid #1976d2;
+    background: #f0f0f0;
 }
 
 .modal-body {
-    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    padding: 1.5rem;
 }
 
-.category-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.5rem;
-}
-
-.category-option {
-    background: var(--surface);
-    border: 2px solid var(--border-color);
-    padding: 1rem;
+.modal-body input[type="text"] {
+    padding: 0.7rem 1rem;
+    border: 1px solid #ccc;
     border-radius: 8px;
+    font-size: 1rem;
+    width: 100%;
+    outline: none;
+    transition: border 0.2s;
+}
+
+.modal-body input[type="text"]:focus {
+    border: 1.5px solid #1976d2;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 0.7rem;
+    justify-content: flex-end;
+}
+
+.modal-create-btn {
+    background: #1976d2;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.6rem 1.2rem;
+    font-size: 1rem;
     cursor: pointer;
-    transition: var(--transition);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-    text-align: center;
+    font-weight: 500;
+    transition: background 0.18s;
 }
 
-.category-option:hover {
-    border-color: var(--primary-color);
-    background: rgba(76, 175, 80, 0.05);
+.modal-create-btn:focus {
+    outline: 2px solid #1976d2;
 }
 
-.category-option i {
-    font-size: 1.5rem;
-    color: var(--primary-color);
+.modal-create-btn:hover {
+    background: #1256a3;
 }
 
-.category-option span {
-    font-size: 0.9rem;
-    color: var(--text-primary);
+.modal-cancel-btn {
+    background: #f3f3f3;
+    color: #444;
+    border: none;
+    border-radius: 8px;
+    padding: 0.6rem 1.2rem;
+    font-size: 1rem;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.18s;
 }
 
-/* User Lists */
+.modal-cancel-btn:focus {
+    outline: 2px solid #1976d2;
+}
+
+.modal-cancel-btn:hover {
+    background: #e0e0e0;
+}
+
+/* Botão Criar Lista */
+.create-list-btn {
+    display: block;
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto 2rem auto;
+    background: #1976d2;
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    padding: 1rem 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(25, 118, 210, 0.08);
+    transition: background 0.18s;
+}
+
+.create-list-btn:focus {
+    outline: 2px solid #1976d2;
+}
+
+.create-list-btn:hover {
+    background: #1256a3;
+}
+
+/* Card de lista de usuário */
 .user-lists {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
     list-style: none;
     padding: 0;
-    margin: 0;
-    align-items: stretch;
+    margin: 0 0 2rem 0;
 }
 
 .list-card {
-    background: var(--surface);
-    border-radius: var(--border-radius);
-    box-shadow: var(--shadow-light);
-    padding: 1.5rem 1.2rem;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
+    margin-bottom: 1.2rem;
+    padding: 1.2rem 1.5rem;
     display: flex;
     flex-direction: column;
-    gap: 0.7rem;
-    cursor: pointer;
-    transition: var(--transition);
-    border: 2px solid transparent;
     width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
+    max-width: 600px;
+    min-width: 0;
+    transition: box-shadow 0.18s, transform 0.18s;
+    cursor: pointer;
+    border: 1.5px solid #e0e0e0;
+    word-break: break-word;
+}
+
+.list-card:hover {
+    box-shadow: 0 4px 24px rgba(25, 118, 210, 0.10);
+    border-color: #1976d2;
+    transform: translateY(-2px) scale(1.01);
 }
 
 .list-card-title {
     font-size: 1.15rem;
     font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 0.2rem;
+    color: #1976d2;
+    margin-bottom: 0.3rem;
     word-break: break-word;
-    overflow-wrap: break-word;
-    display: block;
-    max-width: 100%;
+    white-space: pre-line;
 }
 
-@media (min-width: 600px) {
-    .list-card-title {
-        /* Limita visualmente a largura do texto, mas permite quebra */
-        max-width: 40ch;
+@media (max-width: 700px) {
+    .list-card {
+        max-width: 100%;
+        padding: 1rem 0.7rem;
     }
 }
 

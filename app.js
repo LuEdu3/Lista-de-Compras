@@ -3,9 +3,23 @@ const express = require('express');
 const path = require('path');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+const mysql = require('mysql2');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Conexão com o banco de dados MySQL
+const connection = mysql.createConnection({
+    host: 'localhost',
+    user: 'LuizEduardo',
+    password: '1122',
+    database: 'lista_de_compras'
+});
+
+connection.connect((err) => {
+    if (err) throw err;
+    console.log('Conectado ao MySQL!');
+});
 
 // Middleware
 app.use(cors());
@@ -22,201 +36,96 @@ app.get('/', (req, res) => {
 
 // API Routes
 
-// Obter lista de compras
-app.get('/api/list/:userId', (req, res) => {
-    const { userId } = req.params;
-    const userList = shoppingLists[userId] || [];
-    res.json({
-        success: true,
-        data: userList
+// Obter todas as listas
+app.get('/api/listas', (req, res) => {
+    connection.query('SELECT * FROM listas', (err, results) => {
+        if (err) return res.status(500).json({ success: false, message: 'Erro ao buscar listas', error: err });
+        res.json({ success: true, data: results });
     });
 });
 
-// Salvar lista de compras
-app.post('/api/list/:userId', (req, res) => {
-    const { userId } = req.params;
-    const { items } = req.body;
+// Criar nova lista
+app.post('/api/listas', (req, res) => {
+    const { nome } = req.body;
+    if (!nome) return res.status(400).json({ success: false, message: 'Nome é obrigatório' });
+    connection.query('INSERT INTO listas (nome) VALUES (?)', [nome], (err, result) => {
+        if (err) return res.status(500).json({ success: false, message: 'Erro ao criar lista', error: err });
+        res.json({ success: true, id: result.insertId, nome });
+    });
+});
 
-    if (!Array.isArray(items)) {
-        return res.status(400).json({
-            success: false,
-            message: 'Items deve ser um array'
-        });
-    }
-
-    shoppingLists[userId] = items;
-
-    res.json({
-        success: true,
-        message: 'Lista salva com sucesso',
-        data: items
+// Obter itens de uma lista
+app.get('/api/listas/:listaId/itens', (req, res) => {
+    const { listaId } = req.params;
+    connection.query('SELECT * FROM itens WHERE lista_id = ?', [listaId], (err, results) => {
+        if (err) return res.status(500).json({ success: false, message: 'Erro ao buscar itens', error: err });
+        res.json({ success: true, data: results });
     });
 });
 
 // Adicionar item à lista
-app.post('/api/list/:userId/item', (req, res) => {
-    const { userId } = req.params;
-    const { name, quantity, price, category } = req.body;
-
-    if (!name) {
-        return res.status(400).json({
-            success: false,
-            message: 'Nome do item é obrigatório'
-        });
-    }
-
-    if (!shoppingLists[userId]) {
-        shoppingLists[userId] = [];
-    }
-
-    const newItem = {
-        id: Date.now(),
-        name,
-        quantity: quantity || 1,
-        price: price || 0,
-        category: category || 'outros',
-        completed: false,
-        dateAdded: new Date().toISOString()
-    };
-
-    shoppingLists[userId].unshift(newItem);
-
-    res.json({
-        success: true,
-        message: 'Item adicionado com sucesso',
-        data: newItem
-    });
+app.post('/api/listas/:listaId/itens', (req, res) => {
+    const { listaId } = req.params;
+    const { nome, quantidade, preco, categoria } = req.body;
+    if (!nome) return res.status(400).json({ success: false, message: 'Nome do item é obrigatório' });
+    connection.query(
+        'INSERT INTO itens (lista_id, nome, quantidade, preco, categoria) VALUES (?, ?, ?, ?, ?)',
+        [listaId, nome, quantidade || 1, preco || 0, categoria || 'outros'],
+        (err, result) => {
+            if (err) return res.status(500).json({ success: false, message: 'Erro ao adicionar item', error: err });
+            res.json({ success: true, id: result.insertId, nome });
+        }
+    );
 });
 
 // Atualizar item
-app.put('/api/list/:userId/item/:itemId', (req, res) => {
-    const { userId, itemId } = req.params;
-    const { name, quantity, price, category, completed } = req.body;
-
-    if (!shoppingLists[userId]) {
-        return res.status(404).json({
-            success: false,
-            message: 'Lista não encontrada'
-        });
-    }
-
-    const itemIndex = shoppingLists[userId].findIndex(item => item.id == itemId);
-
-    if (itemIndex === -1) {
-        return res.status(404).json({
-            success: false,
-            message: 'Item não encontrado'
-        });
-    }
-
-    const item = shoppingLists[userId][itemIndex];
-
-    // Atualizar apenas os campos fornecidos
-    if (name !== undefined) item.name = name;
-    if (quantity !== undefined) item.quantity = quantity;
-    if (price !== undefined) item.price = price;
-    if (category !== undefined) item.category = category;
-    if (completed !== undefined) item.completed = completed;
-
-    item.dateModified = new Date().toISOString();
-
-    res.json({
-        success: true,
-        message: 'Item atualizado com sucesso',
-        data: item
-    });
+app.put('/api/itens/:itemId', (req, res) => {
+    const { itemId } = req.params;
+    const { nome, quantidade, preco, categoria, concluido } = req.body;
+    connection.query(
+        'UPDATE itens SET nome=?, quantidade=?, preco=?, categoria=?, concluido=? WHERE id=?',
+        [nome, quantidade, preco, categoria, concluido, itemId],
+        (err, result) => {
+            if (err) return res.status(500).json({ success: false, message: 'Erro ao atualizar item', error: err });
+            res.json({ success: true, message: 'Item atualizado com sucesso' });
+        }
+    );
 });
 
 // Deletar item
-app.delete('/api/list/:userId/item/:itemId', (req, res) => {
-    const { userId, itemId } = req.params;
-
-    if (!shoppingLists[userId]) {
-        return res.status(404).json({
-            success: false,
-            message: 'Lista não encontrada'
-        });
-    }
-
-    const itemIndex = shoppingLists[userId].findIndex(item => item.id == itemId);
-
-    if (itemIndex === -1) {
-        return res.status(404).json({
-            success: false,
-            message: 'Item não encontrado'
-        });
-    }
-
-    shoppingLists[userId].splice(itemIndex, 1);
-
-    res.json({
-        success: true,
-        message: 'Item removido com sucesso'
+app.delete('/api/itens/:itemId', (req, res) => {
+    const { itemId } = req.params;
+    connection.query('DELETE FROM itens WHERE id=?', [itemId], (err, result) => {
+        if (err) return res.status(500).json({ success: false, message: 'Erro ao deletar item', error: err });
+        res.json({ success: true, message: 'Item removido com sucesso' });
     });
 });
 
-// Limpar itens concluídos
-app.delete('/api/list/:userId/completed', (req, res) => {
-    const { userId } = req.params;
-
-    if (!shoppingLists[userId]) {
-        return res.status(404).json({
-            success: false,
-            message: 'Lista não encontrada'
-        });
-    }
-
-    const completedCount = shoppingLists[userId].filter(item => item.completed).length;
-    shoppingLists[userId] = shoppingLists[userId].filter(item => !item.completed);
-
-    res.json({
-        success: true,
-        message: `${completedCount} item(s) removido(s)`,
-        removedCount: completedCount
+// Limpar itens concluídos de uma lista
+app.delete('/api/listas/:listaId/itens/concluidos', (req, res) => {
+    const { listaId } = req.params;
+    connection.query('DELETE FROM itens WHERE lista_id=? AND concluido=1', [listaId], (err, result) => {
+        if (err) return res.status(500).json({ success: false, message: 'Erro ao limpar itens concluídos', error: err });
+        res.json({ success: true, message: 'Itens concluídos removidos', removedCount: result.affectedRows });
     });
 });
 
-// Limpar toda a lista
-app.delete('/api/list/:userId', (req, res) => {
-    const { userId } = req.params;
-
-    const itemCount = shoppingLists[userId] ? shoppingLists[userId].length : 0;
-    shoppingLists[userId] = [];
-
-    res.json({
-        success: true,
-        message: 'Lista limpa com sucesso',
-        removedCount: itemCount
+// Limpar todos os itens de uma lista
+app.delete('/api/listas/:listaId/itens', (req, res) => {
+    const { listaId } = req.params;
+    connection.query('DELETE FROM itens WHERE lista_id=?', [listaId], (err, result) => {
+        if (err) return res.status(500).json({ success: false, message: 'Erro ao limpar lista', error: err });
+        res.json({ success: true, message: 'Lista limpa com sucesso', removedCount: result.affectedRows });
     });
 });
 
-// Obter estatísticas
-app.get('/api/stats/:userId', (req, res) => {
-    const { userId } = req.params;
-    const userList = shoppingLists[userId] || [];
-
-    const stats = {
-        totalItems: userList.length,
-        completedItems: userList.filter(item => item.completed).length,
-        pendingItems: userList.filter(item => !item.completed).length,
-        totalValue: userList.reduce((sum, item) => sum + (item.quantity * item.price), 0),
-        completedValue: userList
-            .filter(item => item.completed)
-            .reduce((sum, item) => sum + (item.quantity * item.price), 0),
-        categories: {}
-    };
-
-    // Contar itens por categoria
-    userList.forEach(item => {
-        if (!stats.categories[item.category]) {
-            stats.categories[item.category] = 0;
-        }
-        stats.categories[item.category]++;
-    });
-
-    res.json({
-        success: true,
-        data: stats
+// Obter uma lista específica
+app.get('/api/listas/:listaId', (req, res) => {
+    const { listaId } = req.params;
+    connection.query('SELECT * FROM listas WHERE id = ?', [listaId], (err, results) => {
+        if (err) return res.status(500).json({ success: false, message: 'Erro ao buscar lista', error: err });
+        if (results.length === 0) return res.status(404).json({ success: false, message: 'Lista não encontrada' });
+        res.json({ success: true, data: results[0] });
     });
 });
 
