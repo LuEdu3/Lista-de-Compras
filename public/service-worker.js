@@ -23,6 +23,10 @@ self.addEventListener('install', event => {
 });
 
 self.addEventListener('fetch', event => {
+    // Só cacheia requisições GET
+    if (event.request.method !== 'GET') {
+        return;
+    }
     event.respondWith(
         caches.match(event.request).then(response => {
             // Retorna o recurso do cache se encontrado

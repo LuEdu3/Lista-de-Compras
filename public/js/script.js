@@ -27,6 +27,7 @@ const elements = {
     categoryOptions: document.querySelectorAll('.category-option'),
     notificationContainer: document.getElementById('notificationContainer'),
 
+
     // Elementos da Tela de Seleção de Listas
     listSelectionScreen: document.getElementById('listSelectionScreen'),
     userListsContainer: document.getElementById('userLists'), // Renomeado para evitar conflito com 'userLists' array
@@ -43,6 +44,8 @@ const elements = {
     backToListsBtn: document.getElementById('backToListsBtn'), // Botão de voltar
 };
 
+
+
 // Funções de Utilitário
 function formatCurrency(value) {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -54,32 +57,49 @@ function showNotification(message, type = 'info') {
     notification.innerHTML = `
         <span class="icon">
             ${type === 'success' ? '<i class="fas fa-check-circle"></i>' :
-              type === 'error' ? '<i class="fas fa-times-circle"></i>' :
-              type === 'warning' ? '<i class="fas fa-exclamation-triangle"></i>' :
-              '<i class="fas fa-info-circle"></i>'}
+            type === 'error' ? '<i class="fas fa-times-circle"></i>' :
+                type === 'warning' ? '<i class="fas fa-exclamation-triangle"></i>' :
+                    '<i class="fas fa-info-circle"></i>'}
         </span>
         <span class="message">${message}</span>
         <button class="close-btn">&times;</button>
     `;
     elements.notificationContainer.appendChild(notification);
 
-    // Adiciona animação de entrada
-    setTimeout(() => notification.style.opacity = '1', 10); // Pequeno delay para a transição acontecer
+    // DEBUG: Notificação criada
+    console.debug(`[DEBUG] Notificação (${type}):`, message);
+
+    setTimeout(() => notification.style.opacity = '1', 10);
 
     notification.querySelector('.close-btn').addEventListener('click', () => {
+        // DEBUG: Notificação fechada manualmente
+        console.debug('[DEBUG] Notificação fechada manualmente:', message);
         hideNotification(notification);
     });
 
     setTimeout(() => {
+        // DEBUG: Notificação fechada automaticamente
+        console.debug('[DEBUG] Notificação fechada automaticamente:', message);
         hideNotification(notification);
-    }, 5000); // Esconde a notificação após 5 segundos
+    }, 5000);
 }
 
 function hideNotification(notification) {
     notification.style.opacity = '0';
+    let removed = false;
+    // Remove após a transição
     notification.addEventListener('transitionend', () => {
-        notification.remove();
+        if (!removed) {
+            notification.remove();
+            removed = true;
+        }
     }, { once: true });
+    // Fallback: remove após 600ms caso a transição não dispare
+    setTimeout(() => {
+        if (!removed && document.body.contains(notification)) {
+            notification.remove();
+        }
+    }, 600);
 }
 
 // Funções de Manipulação de Telas
@@ -440,21 +460,20 @@ function renderShoppingList() {
         let deltaX;
         let isSwiping = false;
 
+        // Touch events com passive: true
         li.addEventListener('touchstart', (e) => {
             startX = e.touches[0].clientX;
             deltaX = 0;
             isSwiping = false;
-            li.style.transition = 'none'; // Desabilita a transição durante o swipe
-        });
-
+            li.style.transition = 'none';
+        }, { passive: true });
         li.addEventListener('touchmove', (e) => {
             deltaX = e.touches[0].clientX - startX;
-            if (Math.abs(deltaX) > 20) { // Começa o swipe após um certo limiar
+            if (Math.abs(deltaX) > 20) {
                 isSwiping = true;
                 li.style.transform = `translateX(${deltaX}px)`;
             }
-        });
-
+        }, { passive: true });
         li.addEventListener('touchend', () => {
             li.style.transition = 'transform 0.2s ease-out'; // Reabilita a transição
             if (isSwiping) {
@@ -701,7 +720,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
-    elements.closeCategoryModal.addEventListener('click', () => {
+    elements.closeCategoryModal && elements.closeCategoryModal.addEventListener('click', () => {
         elements.categoryModal.classList.remove('active');
         elements.modalOverlay.classList.remove('active');
     });

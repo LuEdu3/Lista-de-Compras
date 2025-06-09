@@ -28,8 +28,10 @@ body {
     background-color: var(--background);
     color: var(--text-primary);
     line-height: 1.6;
-    padding-bottom: 80px; /* Espaço para o FAB ou rodapé */
-    overflow-x: hidden; /* Evita scroll horizontal */
+    padding-bottom: 80px;
+    /* Espaço para o FAB ou rodapé */
+    overflow-x: hidden;
+    /* Evita scroll horizontal */
 }
 
 .container {
@@ -49,24 +51,32 @@ body {
     background-color: var(--background);
     z-index: 10;
     transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
-    overflow-y: auto; /* Permite rolagem dentro da tela */
-    -webkit-overflow-scrolling: touch; /* Melhora a rolagem em iOS */
+    overflow-y: auto;
+    /* Permite rolagem dentro da tela */
+    -webkit-overflow-scrolling: touch;
+    /* Melhora a rolagem em iOS */
 }
 
 .list-selection-screen.inactive,
 .main-screen.inactive {
-    transform: translateX(100%); /* Move para fora da tela à direita */
+    transform: translateX(100%);
+    /* Move para fora da tela à direita */
     opacity: 0;
-    pointer-events: none; /* Impede interações quando inativo */
-    z-index: 5; /* Z-index menor quando inativo */
+    pointer-events: none;
+    /* Impede interações quando inativo */
+    z-index: 5;
+    /* Z-index menor quando inativo */
 }
 
 .list-selection-screen.active,
 .main-screen.active {
-    transform: translateX(0); /* Volta para a posição original */
+    transform: translateX(0);
+    /* Volta para a posição original */
     opacity: 1;
-    pointer-events: auto; /* Permite interações quando ativo */
-    z-index: 10; /* Z-index maior quando ativo */
+    pointer-events: auto;
+    /* Permite interações quando ativo */
+    z-index: 10;
+    /* Z-index maior quando ativo */
 }
 
 
@@ -83,13 +93,15 @@ body {
     gap: 10px;
     position: sticky;
     top: 0;
-    z-index: 100; /* Garante que o header fique acima de outros elementos */
+    z-index: 100;
+    /* Garante que o header fique acima de outros elementos */
 }
 
 .header h1 {
     margin: 0;
     font-size: 1.8rem;
-    align-self: center; /* Centraliza o título */
+    align-self: center;
+    /* Centraliza o título */
 }
 
 .header-stats {
@@ -222,17 +234,20 @@ body {
 }
 
 .shopping-list li.completed {
-    background-color: #e8f5e9; /* Light green for completed items */
+    background-color: #e8f5e9;
+    /* Light green for completed items */
     text-decoration: line-through;
     color: var(--text-secondary);
 }
 
 .shopping-list li.swipe-left {
-    transform: translateX(-80px); /* Adjust based on icon width */
+    transform: translateX(-80px);
+    /* Adjust based on icon width */
 }
 
 .shopping-list li.swipe-right {
-    transform: translateX(80px); /* Adjust based on icon width */
+    transform: translateX(80px);
+    /* Adjust based on icon width */
 }
 
 .item-actions {
@@ -255,7 +270,8 @@ body {
 
 .item-actions button {
     height: 100%;
-    width: 80px; /* Width of the revealed action */
+    width: 80px;
+    /* Width of the revealed action */
     border: none;
     color: white;
     font-size: 1.2rem;
@@ -314,7 +330,8 @@ body {
     font-weight: bold;
     color: var(--primary-color);
     margin-left: auto;
-    white-space: nowrap; /* Impede quebra de linha */
+    white-space: nowrap;
+    /* Impede quebra de linha */
 }
 
 /* Filtros */
@@ -381,7 +398,8 @@ body {
     grid-template-columns: 1fr 1fr;
     gap: 15px;
     margin-top: 20px;
-    margin-bottom: 80px; /* Espaço para o FAB */
+    margin-bottom: 80px;
+    /* Espaço para o FAB */
 }
 
 .summary-item {
@@ -397,7 +415,8 @@ body {
 }
 
 .summary-item.total {
-    grid-column: 1 / -1; /* Ocupa todas as colunas */
+    grid-column: 1 / -1;
+    /* Ocupa todas as colunas */
     font-weight: bold;
     font-size: 1.2rem;
     color: var(--primary-color);
@@ -412,7 +431,8 @@ body {
     justify-content: space-between;
     gap: 10px;
     margin-top: 20px;
-    margin-bottom: 20px; /* Adicionado para garantir espaçamento antes do final da página */
+    margin-bottom: 20px;
+    /* Adicionado para garantir espaçamento antes do final da página */
 }
 
 .list-actions-bottom .btn {
@@ -448,13 +468,24 @@ body {
 /* Notificações */
 .notification-container {
     position: fixed;
-    bottom: 20px;
+    top: 24px;
     left: 50%;
+    bottom: unset;
     transform: translateX(-50%);
     display: flex;
     flex-direction: column-reverse;
     gap: 10px;
     z-index: 2000;
+    min-width: 250px;
+    max-width: 90vw;
+    width: auto;
+    pointer-events: none;
+    /* Permite clicar através do container, mas não dos filhos */
+}
+
+.notification-container>.notification {
+    pointer-events: auto;
+    /* Permite interação com a notificação */
 }
 
 .notification {
@@ -664,7 +695,8 @@ body {
     cursor: pointer;
     transition: var(--transition);
     position: relative;
-    overflow: hidden; /* Para esconder as ações de deslizar */
+    overflow: hidden;
+    /* Para esconder as ações de deslizar */
 }
 
 .list-card:hover {
