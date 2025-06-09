@@ -12,165 +12,151 @@
 </head>
 
 <body>
-    <!-- Tela de Seleção de Listas -->
-    <div id="listSelectionScreen" class="list-selection-screen">
+    <div id="listSelectionScreen" class="list-selection-screen active">
         <div class="list-selection-container">
             <h2>Minhas Listas</h2>
-            <ul id="userLists" class="user-lists"></ul>
-            <!-- Botão para criar nova lista -->
-            <button id="openCreateListModalBtn" class="create-list-btn">Criar Lista</button>
+            <ul id="userLists" class="user-lists">
+                </ul>
+            <button id="openCreateListModalBtn" class="create-list-btn">
+                <i class="fas fa-plus"></i> Criar Nova Lista
+            </button>
 
-            <!-- Modal de criação de lista -->
             <div class="modal-overlay" id="createListModal" tabindex="-1">
                 <div class="modal create-list-modal" role="dialog" aria-modal="true"
                     aria-labelledby="createListModalTitle">
                     <div class="modal-header">
                         <h3 id="createListModalTitle">Criar Nova Lista</h3>
-                        <button class="modal-close" id="closeCreateListModal" aria-label="Fechar">
+                        <button class="close-modal-btn" id="closeCreateListModalBtn" aria-label="Fechar">
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
-                    <form id="createListModalForm" class="modal-body">
-                        <input type="text" id="modalNewListName" placeholder="Nome da nova lista" required autofocus
-                            maxlength="60">
-                        <div class="modal-actions">
-                            <button type="submit" class="modal-create-btn">Criar</button>
-                            <button type="button" class="modal-cancel-btn" id="cancelCreateListModal">Cancelar</button>
-                        </div>
-                    </form>
+                    <div class="modal-body">
+                        <form id="createListForm">
+                            <div class="input-group">
+                                <label for="newListName">Nome da Lista:</label>
+                                <input type="text" id="newListName" placeholder="Ex: Compras do Mês" required>
+                            </div>
+                            <div class="modal-actions">
+                                <button type="submit" class="btn btn-primary">Criar Lista</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
-            <!-- Fim do modal de criação de lista -->
         </div>
     </div>
 
-    <!-- Header -->
-    <header class="header">
-        <div class="header-content">
-            <h1 class="app-title">
-                <i class="fas fa-shopping-cart"></i>
-                Lista de Compras
-            </h1>
+    <div id="mainScreen" class="main-screen inactive">
+        <header class="header">
+            <button id="backToListsBtn" class="back-button">
+                <i class="fas fa-arrow-left"></i> Voltar para Listas
+            </button>
+            <h1 id="currentListName">Minha Lista de Compras</h1>
             <div class="header-stats">
-                <button id="backToListsBtn" class="action-btn" style="display:none">
-                    <i class="fas fa-arrow-left"></i> Minhas Listas
+                <div class="stat-card">
+                    <span class="stat-label">Total de Itens:</span>
+                    <span id="totalItems" class="stat-value">0</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Valor Total:</span>
+                    <span id="totalPrice" class="stat-value">R$ 0,00</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="container">
+            <form id="addItemForm" class="add-item-form">
+                <div class="input-group">
+                    <input type="text" id="itemName" placeholder="Nome do item" required>
+                    <input type="number" id="itemQuantity" placeholder="Qtd" value="1" min="1">
+                    <input type="number" id="itemPrice" placeholder="Preço (opcional)" step="0.01" min="0">
+                </div>
+                <div class="form-actions">
+                    <button type="button" id="openCategoryModalBtn" class="btn btn-secondary category-btn">
+                        <i class="fas fa-tag"></i> Categoria
+                    </button>
+                    <button type="submit" class="btn btn-primary" id="addItemBtn">
+                        <i class="fas fa-plus"></i> Adicionar
+                    </button>
+                </div>
+            </form>
+
+            <div class="filters">
+                <button class="filter-btn active" data-filter="all">Todos</button>
+                <button class="filter-btn" data-filter="pending">Pendentes</button>
+                <button class="filter-btn" data-filter="completed">Comprados</button>
+            </div>
+
+            <ul id="shoppingList" class="shopping-list">
+                </ul>
+
+            <div id="emptyState" class="empty-state">
+                <i class="fas fa-box-open empty-icon"></i>
+                <p>Sua lista está vazia!</p>
+                <p>Adicione um item acima para começar.</p>
+            </div>
+
+            <div class="summary-card">
+                <div class="summary-item">
+                    <span>Itens na lista:</span>
+                    <span id="summaryItems">0</span>
+                </div>
+                <div class="summary-item">
+                    <span>Itens comprados:</span>
+                    <span id="summaryCompleted">0</span>
+                </div>
+                <div class="summary-item total">
+                    <span>Total da compra:</span>
+                    <span id="summaryTotal">R$ 0,00</span>
+                </div>
+            </div>
+
+            <div class="list-actions-bottom">
+                <button id="clearCompleted" class="btn btn-secondary">
+                    <i class="fas fa-check-double"></i> Limpar Comprados
+                </button>
+                <button id="clearAll" class="btn btn-danger">
+                    <i class="fas fa-trash-alt"></i> Limpar Lista
                 </button>
             </div>
-        </div>
-    </header>
+        </main>
 
-    <!-- Add Item Form -->
-    <section class="add-item-section">
-        <form class="add-item-form" id="addItemForm">
-            <div class="input-group">
-                <input type="text" id="itemName" placeholder="Nome do produto" class="item-input" required>
-                <input type="number" id="itemQuantity" placeholder="Qtd" class="quantity-input" min="1" value="1">
-                <input type="number" id="itemPrice" placeholder="Preço" class="price-input" step="0.01" min="0">
-            </div>
-            <button type="submit" class="add-btn">
-                <i class="fas fa-plus"></i>
-                Adicionar
-            </button>
-        </form>
-    </section>
-
-    <!-- Categories Filter -->
-    <section class="categories-section">
-        <div class="categories-filter">
-            <button class="category-btn active" data-category="all">
-                <i class="fas fa-th-large"></i>
-                Todos
-            </button>
-            <button class="category-btn" data-category="frutas">
-                <i class="fas fa-apple-alt"></i>
-                Frutas
-            </button>
-            <button class="category-btn" data-category="verduras">
-                <i class="fas fa-leaf"></i>
-                Verduras
-            </button>
-            <button class="category-btn" data-category="carnes">
-                <i class="fas fa-drumstick-bite"></i>
-                Carnes
-            </button>
-            <button class="category-btn" data-category="laticinios">
-                <i class="fas fa-cheese"></i>
-                Laticínios
-            </button>
-            <button class="category-btn" data-category="outros">
-                <i class="fas fa-box"></i>
-                Outros
-            </button>
-        </div>
-    </section>
-
-    <!-- Shopping List -->
-    <main class="shopping-list-container">
-        <div class="list-header">
-            <h2>Minha Lista</h2>
-            <div class="list-actions">
-                <button class="action-btn" id="clearCompleted">
-                    <i class="fas fa-check-double"></i>
-                    Limpar Concluídos
-                </button>
-                <button class="action-btn danger" id="clearAll">
-                    <i class="fas fa-trash"></i>
-                    Limpar Tudo
-                </button>
-            </div>
-        </div>
-
-        <ul class="shopping-list" id="shoppingList">
-            <!-- Items serão adicionados dinamicamente -->
-        </ul>
-
-        <div class="empty-state" id="emptyState">
-            <i class="fas fa-shopping-basket"></i>
-            <h3>Sua lista está vazia</h3>
-            <p>Adicione itens acima para começar suas compras</p>
-        </div>
-    </main>
-
-    <!-- Summary -->
-    <section class="summary-section">
-        <div class="summary-card">
-            <div class="summary-item">
-                <span class="summary-label">Total de Itens:</span>
-                <span class="summary-value" id="summaryItems">0</span>
-            </div>
-            <div class="summary-item">
-                <span class="summary-label">Concluídos:</span>
-                <span class="summary-value" id="summaryCompleted">0</span>
-            </div>
-            <div class="summary-item total">
-                <span class="summary-label">Total Estimado:</span>
-                <span class="summary-value" id="summaryTotal">R$ 0,00</span>
-            </div>
-        </div>
-    </section>
-
-    <!-- Category Modal -->
-    <div class="modal-overlay" id="categoryModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h3>Selecionar Categoria</h3>
-                <button class="modal-close" id="closeCategoryModal">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="category-grid">
-                    <button class="category-option" data-value="frutas">
+        <div class="modal-overlay" id="categoryModal" tabindex="-1">
+            <div class="modal category-modal" role="dialog" aria-modal="true" aria-labelledby="categoryModalTitle">
+                <div class="modal-header">
+                    <h3 id="categoryModalTitle">Selecionar Categoria</h3>
+                    <button class="close-modal-btn" id="closeCategoryModal" aria-label="Fechar">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body category-options-grid">
+                    <button class="category-option" data-value="geral">
+                        <i class="fas fa-shopping-basket"></i>
+                        <span>Geral</span>
+                    </button>
+                    <button class="category-option" data-value="alimentos">
                         <i class="fas fa-apple-alt"></i>
-                        <span>Frutas</span>
+                        <span>Alimentos</span>
                     </button>
-                    <button class="category-option" data-value="verduras">
-                        <i class="fas fa-leaf"></i>
-                        <span>Verduras</span>
+                    <button class="category-option" data-value="limpeza">
+                        <i class="fas fa-spray-can"></i>
+                        <span>Limpeza</span>
                     </button>
-                    <button class="category-option" data-value="carnes">
-                        <i class="fas fa-drumstick-bite"></i>
-                        <span>Carnes</span>
+                    <button class="category-option" data-value="bebidas">
+                        <i class="fas fa-wine-bottle"></i>
+                        <span>Bebidas</span>
+                    </button>
+                    <button class="category-option" data-value="higiene">
+                        <i class="fas fa-toilet-paper"></i>
+                        <span>Higiene</span>
+                    </button>
+                    <button class="category-option" data-value="casa">
+                        <i class="fas fa-house-damage"></i>
+                        <span>Casa</span>
+                    </button>
+                    <button class="category-option" data-value="congelados">
+                        <i class="fas fa-ice-cream"></i>
+                        <span>Congelados</span>
                     </button>
                     <button class="category-option" data-value="laticinios">
                         <i class="fas fa-cheese"></i>
@@ -180,13 +166,13 @@
                         <i class="fas fa-bread-slice"></i>
                         <span>Padaria</span>
                     </button>
-                    <button class="category-option" data-value="limpeza">
-                        <i class="fas fa-spray-can"></i>
-                        <span>Limpeza</span>
+                    <button class="category-option" data-value="carnes">
+                        <i class="fas fa-drumstick-bite"></i>
+                        <span>Carnes</span>
                     </button>
-                    <button class="category-option" data-value="bebidas">
-                        <i class="fas fa-wine-bottle"></i>
-                        <span>Bebidas</span>
+                    <button class="category-option" data-value="hortifruti">
+                        <i class="fas fa-carrot"></i>
+                        <span>Hortifruti</span>
                     </button>
                     <button class="category-option" data-value="outros">
                         <i class="fas fa-box"></i>
@@ -197,8 +183,11 @@
         </div>
     </div>
 
+    <div id="notificationContainer" class="notification-container"></div>
+
     <script src="js/script.js"></script>
     <script>
+        // Service Worker registration
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function () {
                 navigator.serviceWorker.register('service-worker.js').then(function (reg) {
