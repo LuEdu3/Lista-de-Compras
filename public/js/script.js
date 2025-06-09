@@ -606,6 +606,15 @@ function loadListsFromStorage() {
     userLists = data ? JSON.parse(data) : [];
 }
 
+// Cria uma nova lista, salva no localStorage e atualiza a tela
+function createNewList(name) {
+    const id = Date.now().toString();
+    userLists.push({ id, name });
+    saveListsToStorage();
+    renderUserLists();
+    showNotification('Lista criada com sucesso!', 'success');
+}
+
 // Adicionar CSS para animação de pulse
 const style = document.createElement('style');
 style.textContent = `
