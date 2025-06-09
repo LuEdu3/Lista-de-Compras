@@ -98,7 +98,6 @@ function setupEventListeners() {
     elements.itemName.addEventListener('input', suggestCategory);
 
     // Listas
-    elements.createListForm.addEventListener('submit', handleCreateList);
     elements.userLists.addEventListener('click', handleSelectList);
 
     // Botão de voltar para listas
