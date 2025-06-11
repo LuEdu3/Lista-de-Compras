@@ -2,8 +2,9 @@
 let shoppingList = [];
 let currentFilter = 'all';
 let editingItem = null;
-let currentListId = null;
-let userLists = [];
+let currentListId = null; // ID da lista atualmente aberta
+let userLists = []; // Array para armazenar as listas de compras do usuário
+let selectedCategory = 'geral'; // Categoria padrão
 
 // Elementos DOM
 const elements = {
@@ -13,8 +14,8 @@ const elements = {
     itemPrice: document.getElementById('itemPrice'),
     shoppingList: document.getElementById('shoppingList'),
     emptyState: document.getElementById('emptyState'),
-    totalItems: document.querySelector('.total-items'),
-    totalPrice: document.querySelector('.total-price'),
+    totalItems: document.getElementById('totalItems'),
+    totalPrice: document.getElementById('totalPrice'),
     summaryItems: document.getElementById('summaryItems'),
     summaryCompleted: document.getElementById('summaryCompleted'),
     summaryTotal: document.getElementById('summaryTotal'),
@@ -24,608 +25,745 @@ const elements = {
     categoryModal: document.getElementById('categoryModal'),
     closeCategoryModal: document.getElementById('closeCategoryModal'),
     categoryOptions: document.querySelectorAll('.category-option'),
+    notificationContainer: document.getElementById('notificationContainer'),
+
+
+    // Elementos da Tela de Seleção de Listas
     listSelectionScreen: document.getElementById('listSelectionScreen'),
-    userLists: document.getElementById('userLists'),
-    createListForm: document.getElementById('createListForm'),
-    newListName: document.getElementById('newListName'),
-    header: document.querySelector('.header'),
-    addItemSection: document.querySelector('.add-item-section'),
-    categoriesSection: document.querySelector('.categories-section'),
-    shoppingListContainer: document.querySelector('.shopping-list-container'),
-    summarySection: document.querySelector('.summary-section'),
-    backToListsBtn: document.getElementById('backToListsBtn'),
+    userListsContainer: document.getElementById('userLists'), // Renomeado para evitar conflito com 'userLists' array
     openCreateListModalBtn: document.getElementById('openCreateListModalBtn'),
     createListModal: document.getElementById('createListModal'),
-    closeCreateListModal: document.getElementById('closeCreateListModal'),
-    cancelCreateListModal: document.getElementById('cancelCreateListModal'),
-    createListModalForm: document.getElementById('createListModalForm'),
-    modalNewListName: document.getElementById('modalNewListName')
+    closeCreateListModalBtn: document.getElementById('closeCreateListModalBtn'),
+    createListForm: document.getElementById('createListForm'),
+    newListName: document.getElementById('newListName'),
+    modalOverlay: document.querySelector('.modal-overlay'), // Para fechar qualquer modal
+
+    // Elementos da Tela Principal
+    mainScreen: document.getElementById('mainScreen'),
+    currentListName: document.getElementById('currentListName'), // Título da lista atual
+    backToListsBtn: document.getElementById('backToListsBtn'), // Botão de voltar
 };
 
-// Dados das categorias
-const categories = {
-    frutas: { icon: 'fas fa-apple-alt', color: '#ff5722' },
-    verduras: { icon: 'fas fa-leaf', color: '#4caf50' },
-    carnes: { icon: 'fas fa-drumstick-bite', color: '#795548' },
-    laticinios: { icon: 'fas fa-cheese', color: '#ffc107' },
-    padaria: { icon: 'fas fa-bread-slice', color: '#ff9800' },
-    limpeza: { icon: 'fas fa-spray-can', color: '#2196f3' },
-    bebidas: { icon: 'fas fa-wine-bottle', color: '#9c27b0' },
-    outros: { icon: 'fas fa-box', color: '#607d8b' }
-};
 
-// Inicialização
-document.addEventListener('DOMContentLoaded', function () {
-    loadListsFromStorage();
-    showListSelectionScreen();
-    setupEventListeners();
-});
 
-// Event Listeners
-function setupEventListeners() {
-    // Formulário de adicionar item
-    elements.form.addEventListener('submit', handleAddItem);
-
-    // Botões de categoria
-    elements.categoryBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            setActiveCategory(btn.dataset.category);
-        });
-    });
-
-    // Botões de ação
-    elements.clearCompleted.addEventListener('click', clearCompletedItems);
-    elements.clearAll.addEventListener('click', clearAllItems);
-
-    // Modal de categoria
-    elements.closeCategoryModal.addEventListener('click', closeModal);
-    elements.categoryModal.addEventListener('click', (e) => {
-        if (e.target === elements.categoryModal) {
-            closeModal();
-        }
-    });
-
-    elements.categoryOptions.forEach(option => {
-        option.addEventListener('click', () => {
-            selectCategory(option.dataset.value);
-        });
-    });
-
-    // Auto-save quando sair da página
-    window.addEventListener('beforeunload', saveToStorage);
-
-    // Detectar quando o usuário está digitando para sugerir categoria
-    elements.itemName.addEventListener('input', suggestCategory);
-
-    // Listas
-    elements.userLists.addEventListener('click', handleSelectList);
-
-    // Botão de voltar para listas
-    if (elements.backToListsBtn) {
-        elements.backToListsBtn.addEventListener('click', showListSelectionScreen);
-    }
-
-    // Modal de criação de lista
-    elements.openCreateListModalBtn.addEventListener('click', openCreateListModal);
-    elements.closeCreateListModal.addEventListener('click', closeCreateListModalFn);
-    elements.cancelCreateListModal.addEventListener('click', closeCreateListModalFn);
-
-    // Fechar modal com ESC
-    elements.createListModal.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') {
-            closeCreateListModalFn();
-        }
-    });
-
-    // Submeter criação de lista
-    elements.createListModalForm.addEventListener('submit', function (e) {
-        e.preventDefault();
-        const name = elements.modalNewListName.value.trim();
-        if (name) {
-            // Função para criar lista (deve existir no seu código)
-            createNewList(name);
-            closeCreateListModalFn();
-        } else {
-            elements.modalNewListName.focus();
-        }
-    });
-}
-
-// Funções principais
-function handleAddItem(e) {
-    e.preventDefault();
-
-    const name = elements.itemName.value.trim();
-    const quantity = parseInt(elements.itemQuantity.value) || 1;
-    const price = parseFloat(elements.itemPrice.value) || 0;
-
-    if (!name) {
-        showNotification('Digite o nome do produto', 'error');
-        return;
-    }
-
-    if (editingItem) {
-        updateItem(editingItem, name, quantity, price);
-        editingItem = null;
-        elements.form.querySelector('button').innerHTML = '<i class="fas fa-plus"></i> Adicionar';
-    } else {
-        addItem(name, quantity, price);
-    }
-
-    elements.form.reset();
-    elements.itemQuantity.value = 1;
-    updateDisplay();
-    updateSummary();
-    saveToStorage();
-}
-
-function addItem(name, quantity, price) {
-    const category = detectCategory(name);
-    const item = {
-        id: Date.now(),
-        name: name,
-        quantity: quantity,
-        price: price,
-        category: category,
-        completed: false,
-        dateAdded: new Date().toISOString()
-    };
-
-    shoppingList.unshift(item);
-    showNotification('Item adicionado com sucesso!', 'success');
-}
-
-function updateItem(id, name, quantity, price) {
-    const item = shoppingList.find(item => item.id === id);
-    if (item) {
-        item.name = name;
-        item.quantity = quantity;
-        item.price = price;
-        item.category = detectCategory(name);
-        showNotification('Item atualizado com sucesso!', 'success');
-    }
-}
-
-function deleteItem(id) {
-    if (confirm('Tem certeza que deseja excluir este item?')) {
-        shoppingList = shoppingList.filter(item => item.id !== id);
-        updateDisplay();
-        updateSummary();
-        saveToStorage();
-        showNotification('Item excluído', 'success');
-    }
-}
-
-function toggleItemCompleted(id) {
-    const item = shoppingList.find(item => item.id === id);
-    if (item) {
-        item.completed = !item.completed;
-        updateDisplay();
-        updateSummary();
-        saveToStorage();
-
-        const message = item.completed ? 'Item marcado como concluído' : 'Item desmarcado';
-        showNotification(message, 'success');
-    }
-}
-
-function editItem(id) {
-    const item = shoppingList.find(item => item.id === id);
-    if (item) {
-        elements.itemName.value = item.name;
-        elements.itemQuantity.value = item.quantity;
-        elements.itemPrice.value = item.price;
-
-        editingItem = id;
-        elements.form.querySelector('button').innerHTML = '<i class="fas fa-save"></i> Salvar';
-
-        elements.itemName.focus();
-        elements.itemName.scrollIntoView({ behavior: 'smooth' });
-    }
-}
-
-function clearCompletedItems() {
-    const completedCount = shoppingList.filter(item => item.completed).length;
-
-    if (completedCount === 0) {
-        showNotification('Não há itens concluídos para remover', 'info');
-        return;
-    }
-
-    if (confirm(`Remover ${completedCount} item(s) concluído(s)?`)) {
-        shoppingList = shoppingList.filter(item => !item.completed);
-        updateDisplay();
-        updateSummary();
-        saveToStorage();
-        showNotification(`${completedCount} item(s) removido(s)`, 'success');
-    }
-}
-
-function clearAllItems() {
-    if (shoppingList.length === 0) {
-        showNotification('A lista já está vazia', 'info');
-        return;
-    }
-
-    if (confirm('Tem certeza que deseja limpar toda a lista?')) {
-        shoppingList = [];
-        updateDisplay();
-        updateSummary();
-        saveToStorage();
-        showNotification('Lista limpa com sucesso', 'success');
-    }
-}
-
-// Funções de exibição
-function updateDisplay() {
-    const filteredItems = getFilteredItems();
-
-    if (filteredItems.length === 0) {
-        elements.shoppingList.innerHTML = '';
-        elements.emptyState.classList.remove('hidden');
-    } else {
-        elements.emptyState.classList.add('hidden');
-        elements.shoppingList.innerHTML = filteredItems.map(createItemHTML).join('');
-
-        // Adicionar event listeners aos novos elementos
-        addItemEventListeners();
-    }
-}
-
-function createItemHTML(item) {
-    const category = categories[item.category] || categories.outros;
-    const totalPrice = (item.quantity * item.price).toFixed(2);
-
-    return `
-        <li class="shopping-item ${item.completed ? 'completed' : ''}" data-id="${item.id}">
-            <input type="checkbox" 
-                   class="item-checkbox" 
-                   ${item.completed ? 'checked' : ''}
-                   onchange="toggleItemCompleted(${item.id})">
-            
-            <div class="item-details">
-                <div class="item-name">${escapeHtml(item.name)}</div>
-                <div class="item-meta">
-                    <span class="item-quantity">Qtd: ${item.quantity}</span>
-                    ${item.price > 0 ? `<span class="item-price">R$ ${item.price.toFixed(2)}</span>` : ''}
-                    ${item.price > 0 ? `<span class="item-total">Total: R$ ${totalPrice}</span>` : ''}
-                    <span class="item-category" style="color: ${category.color}">
-                        <i class="${category.icon}"></i> ${item.category}
-                    </span>
-                </div>
-            </div>
-            
-            <div class="item-actions">
-                <button class="item-btn edit" onclick="editItem(${item.id})" title="Editar">
-                    <i class="fas fa-edit"></i>
-                </button>
-                <button class="item-btn delete" onclick="deleteItem(${item.id})" title="Excluir">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </div>
-        </li>
-    `;
-}
-
-function addItemEventListeners() {
-    // Os event listeners são adicionados inline no HTML para simplificar
-    // Em uma aplicação maior, seria melhor usar addEventListener
-}
-
-function updateSummary() {
-    const totalItems = shoppingList.length;
-    const completedItems = shoppingList.filter(item => item.completed).length;
-    const totalValue = shoppingList.reduce((sum, item) => {
-        return sum + (item.quantity * item.price);
-    }, 0);
-
-    // Atualizar header
-    elements.totalItems.textContent = `${totalItems} ${totalItems === 1 ? 'item' : 'itens'}`;
-    elements.totalPrice.textContent = `R$ ${totalValue.toFixed(2)}`;
-
-    // Atualizar resumo
-    elements.summaryItems.textContent = totalItems;
-    elements.summaryCompleted.textContent = completedItems;
-    elements.summaryTotal.textContent = `R$ ${totalValue.toFixed(2)}`;
-}
-
-// Funções de filtro
-function setActiveCategory(category) {
-    currentFilter = category;
-
-    elements.categoryBtns.forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.category === category);
-    });
-
-    updateDisplay();
-}
-
-function getFilteredItems() {
-    if (currentFilter === 'all') {
-        return shoppingList;
-    }
-    return shoppingList.filter(item => item.category === currentFilter);
-}
-
-// Funções utilitárias
-function detectCategory(itemName) {
-    const name = itemName.toLowerCase();
-
-    const categoryKeywords = {
-        frutas: ['maçã', 'banana', 'laranja', 'uva', 'pêra', 'mamão', 'abacaxi', 'melancia', 'melão', 'morango', 'kiwi', 'manga', 'limão', 'abacate'],
-        verduras: ['alface', 'tomate', 'cebola', 'cenoura', 'batata', 'abobrinha', 'brócolis', 'couve', 'espinafre', 'rúcula', 'pepino', 'pimentão', 'beterraba'],
-        carnes: ['carne', 'frango', 'peixe', 'porco', 'boi', 'linguiça', 'salsicha', 'bacon', 'presunto', 'mortadela', 'peito de peru'],
-        laticinios: ['leite', 'queijo', 'iogurte', 'manteiga', 'creme de leite', 'requeijão', 'mussarela', 'parmesão', 'ricota'],
-        padaria: ['pão', 'bolo', 'biscoito', 'torrada', 'croissant', 'sonho', 'donut', 'rosquinha'],
-        limpeza: ['detergente', 'sabão', 'amaciante', 'desinfetante', 'álcool', 'papel higiênico', 'guardanapo', 'esponja'],
-        bebidas: ['água', 'refrigerante', 'suco', 'cerveja', 'vinho', 'café', 'chá', 'energético', 'isotônico']
-    };
-
-    for (const [category, keywords] of Object.entries(categoryKeywords)) {
-        if (keywords.some(keyword => name.includes(keyword))) {
-            return category;
-        }
-    }
-
-    return 'outros';
-}
-
-function suggestCategory() {
-    const name = elements.itemName.value.trim();
-    if (name.length > 2) {
-        const suggestedCategory = detectCategory(name);
-        if (suggestedCategory !== 'outros') {
-            // Opcional: destacar a categoria sugerida
-            const categoryBtn = document.querySelector(`[data-category="${suggestedCategory}"]`);
-            if (categoryBtn) {
-                categoryBtn.style.animation = 'pulse 0.5s ease';
-                setTimeout(() => {
-                    categoryBtn.style.animation = '';
-                }, 500);
-            }
-        }
-    }
-}
-
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+// Funções de Utilitário
+function formatCurrency(value) {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 }
 
 function showNotification(message, type = 'info') {
-    // Criar elemento de notificação
     const notification = document.createElement('div');
-    notification.className = `notification notification-${type}`;
+    notification.classList.add('notification', type);
     notification.innerHTML = `
-        <i class="fas fa-${getNotificationIcon(type)}"></i>
-        <span>${message}</span>
+        <span class="icon">
+            ${type === 'success' ? '<i class="fas fa-check-circle"></i>' :
+            type === 'error' ? '<i class="fas fa-times-circle"></i>' :
+                type === 'warning' ? '<i class="fas fa-exclamation-triangle"></i>' :
+                    '<i class="fas fa-info-circle"></i>'}
+        </span>
+        <span class="message">${message}</span>
+        <button class="close-btn">&times;</button>
     `;
+    elements.notificationContainer.appendChild(notification);
 
-    // Adicionar estilos
-    Object.assign(notification.style, {
-        position: 'fixed',
-        top: '80px',
-        right: '1rem',
-        background: getNotificationColor(type),
-        color: 'white',
-        padding: '0.75rem 1rem',
-        borderRadius: '8px',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-        zIndex: '3000',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.5rem',
-        minWidth: '200px',
-        transform: 'translateX(100%)',
-        transition: 'transform 0.3s ease'
+    // DEBUG: Notificação criada
+    console.debug(`[DEBUG] Notificação (${type}):`, message);
+
+    setTimeout(() => notification.style.opacity = '1', 10);
+
+    notification.querySelector('.close-btn').addEventListener('click', () => {
+        // DEBUG: Notificação fechada manualmente
+        console.debug('[DEBUG] Notificação fechada manualmente:', message);
+        hideNotification(notification);
     });
 
-    document.body.appendChild(notification);
-
-    // Animar entrada
     setTimeout(() => {
-        notification.style.transform = 'translateX(0)';
-    }, 100);
+        // DEBUG: Notificação fechada automaticamente
+        console.debug('[DEBUG] Notificação fechada automaticamente:', message);
+        hideNotification(notification);
+    }, 5000);
+}
 
-    // Remover após 3 segundos
+function hideNotification(notification) {
+    notification.style.opacity = '0';
+    let removed = false;
+    // Remove após a transição
+    notification.addEventListener('transitionend', () => {
+        if (!removed) {
+            notification.remove();
+            removed = true;
+        }
+    }, { once: true });
+    // Fallback: remove após 600ms caso a transição não dispare
     setTimeout(() => {
-        notification.style.transform = 'translateX(100%)';
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.parentNode.removeChild(notification);
-            }
-        }, 300);
-    }, 3000);
+        if (!removed && document.body.contains(notification)) {
+            notification.remove();
+        }
+    }, 600);
 }
 
-function getNotificationIcon(type) {
-    const icons = {
-        success: 'check-circle',
-        error: 'exclamation-circle',
-        warning: 'exclamation-triangle',
-        info: 'info-circle'
-    };
-    return icons[type] || icons.info;
-}
-
-function getNotificationColor(type) {
-    const colors = {
-        success: '#4CAF50',
-        error: '#f44336',
-        warning: '#ff9800',
-        info: '#2196F3'
-    };
-    return colors[type] || colors.info;
-}
-
-// Funções de modal
-function openModal() {
-    elements.categoryModal.classList.add('active');
-    document.body.style.overflow = 'hidden';
-}
-
-function closeModal() {
-    elements.categoryModal.classList.remove('active');
-    document.body.style.overflow = '';
-}
-
-function selectCategory(category) {
-    setActiveCategory(category);
-    closeModal();
-}
-
-// Modal de criação de lista
-function openCreateListModal() {
-    elements.createListModal.classList.add('active');
-    elements.createListModal.setAttribute('aria-hidden', 'false');
-    setTimeout(() => elements.modalNewListName.focus(), 100);
-}
-
-function closeCreateListModalFn() {
-    elements.createListModal.classList.remove('active');
-    elements.createListModal.setAttribute('aria-hidden', 'true');
-    elements.openCreateListModalBtn.focus();
-    elements.createListModalForm.reset();
-}
-
-elements.openCreateListModalBtn.addEventListener('click', openCreateListModal);
-elements.closeCreateListModal.addEventListener('click', closeCreateListModalFn);
-elements.cancelCreateListModal.addEventListener('click', closeCreateListModalFn);
-
-// Fechar modal com ESC
-elements.createListModal.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') {
-        closeCreateListModalFn();
-    }
-});
-
-// Submeter criação de lista
-elements.createListModalForm.addEventListener('submit', function (e) {
-    e.preventDefault();
-    const name = elements.modalNewListName.value.trim();
-    if (name) {
-        // Função para criar lista (deve existir no seu código)
-        createNewList(name);
-        closeCreateListModalFn();
-    } else {
-        elements.modalNewListName.focus();
-    }
-});
-
-// Funções de persistência
-function saveToStorage() {
-    if (!currentListId) return;
-    const data = {
-        shoppingList: shoppingList,
-        currentFilter: currentFilter,
-        lastSaved: new Date().toISOString()
-    };
-    localStorage.setItem('shoppingListApp_' + currentListId, JSON.stringify(data));
-}
-
-function loadFromStorage() {
-    if (!currentListId) return;
-    const data = localStorage.getItem('shoppingListApp_' + currentListId);
-    if (data) {
-        const parsed = JSON.parse(data);
-        shoppingList = parsed.shoppingList || [];
-        currentFilter = parsed.currentFilter || 'all';
-        setActiveCategory(currentFilter);
-    } else {
-        shoppingList = [];
-        currentFilter = 'all';
-        setActiveCategory('all');
-    }
-}
-
-// Funções de listas
-function handleCreateList(e) {
-    e.preventDefault();
-    const name = elements.newListName.value.trim();
-    if (!name) return;
-    const id = Date.now().toString();
-    userLists.push({ id, name });
-    saveListsToStorage();
-    renderUserLists();
-    elements.newListName.value = '';
-}
-
-function handleSelectList(e) {
-    if (e.target.tagName === 'LI' || e.target.closest('li')) {
-        const li = e.target.closest('li');
-        const listId = li.dataset.id;
-        openList(listId);
-    }
-}
-
-function openList(listId) {
-    currentListId = listId;
-    loadFromStorage();
-    showMainScreen();
-    updateDisplay();
-    updateSummary();
-}
-
+// Funções de Manipulação de Telas
 function showListSelectionScreen() {
-    elements.listSelectionScreen.style.display = 'flex';
-    elements.header.style.display = 'none';
-    elements.addItemSection.style.display = 'none';
-    elements.categoriesSection.style.display = 'none';
-    elements.shoppingListContainer.style.display = 'none';
-    elements.summarySection.style.display = 'none';
-    if (elements.backToListsBtn) elements.backToListsBtn.style.display = 'none';
-    renderUserLists();
+    elements.listSelectionScreen.classList.add('active');
+    elements.listSelectionScreen.classList.remove('inactive');
+    elements.mainScreen.classList.add('inactive');
+    elements.mainScreen.classList.remove('active');
+    currentListId = null; // Limpa o ID da lista atual
+    updateListHeader(''); // Limpa o título da lista na mainScreen
+    renderUserLists(); // Garante que as listas estejam atualizadas
 }
 
 function showMainScreen() {
-    elements.listSelectionScreen.style.display = 'none';
-    elements.header.style.display = '';
-    elements.addItemSection.style.display = '';
-    elements.categoriesSection.style.display = '';
-    elements.shoppingListContainer.style.display = '';
-    elements.summarySection.style.display = '';
-    if (elements.backToListsBtn) elements.backToListsBtn.style.display = '';
+    elements.mainScreen.classList.add('active');
+    elements.mainScreen.classList.remove('inactive');
+    elements.listSelectionScreen.classList.add('inactive');
+    elements.listSelectionScreen.classList.remove('active');
 }
 
-function renderUserLists() {
-    elements.userLists.innerHTML = userLists.map(list => `
-        <li class="list-card" data-id="${list.id}">
-            <div class="list-card-title">${escapeHtml(list.name)}</div>
-        </li>
-    `).join('');
+function updateListHeader(name) {
+    elements.currentListName.textContent = name || 'Lista de Compras';
 }
 
-function saveListsToStorage() {
-    localStorage.setItem('shoppingListsMeta', JSON.stringify(userLists));
-}
-
-function loadListsFromStorage() {
-    const data = localStorage.getItem('shoppingListsMeta');
-    userLists = data ? JSON.parse(data) : [];
-}
-
-// Cria uma nova lista, salva no localStorage e atualiza a tela
-function createNewList(name) {
-    const id = Date.now().toString();
-    userLists.push({ id, name });
-    saveListsToStorage();
-    renderUserLists();
-    showNotification('Lista criada com sucesso!', 'success');
-}
-
-// Adicionar CSS para animação de pulse
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes pulse {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.05); }
-        100% { transform: scale(1); }
+// Funções de Persistência (API)
+async function fetchLists() {
+    try {
+        const response = await fetch('/api/listas');
+        const data = await response.json();
+        if (data.success) {
+            userLists = data.data;
+        } else {
+            showNotification('Erro ao carregar listas: ' + data.message, 'error');
+            userLists = [];
+        }
+    } catch (error) {
+        console.error('Erro de rede ao buscar listas:', error);
+        showNotification('Erro de rede ao carregar listas.', 'error');
+        userLists = [];
     }
-`;
-document.head.appendChild(style);
+}
 
-// Tornar funções globais para os event handlers inline
-window.toggleItemCompleted = toggleItemCompleted;
-window.editItem = editItem;
-window.deleteItem = deleteItem;
+async function createList(name) {
+    try {
+        const response = await fetch('/api/listas', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name })
+        });
+        const data = await response.json();
+        if (data.success) {
+            showNotification('Lista criada com sucesso!', 'success');
+            await fetchLists(); // Recarrega todas as listas
+            openShoppingList(data.listId, name); // Abre a lista recém-criada
+        } else {
+            showNotification('Erro ao criar lista: ' + data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Erro ao criar lista:', error);
+        showNotification('Erro de rede ao criar lista.', 'error');
+    }
+}
+
+async function deleteList(listId) {
+    if (!confirm('Tem certeza que deseja excluir esta lista e todos os seus itens?')) {
+        return;
+    }
+    try {
+        const response = await fetch(`/api/listas/${listId}`, {
+            method: 'DELETE'
+        });
+        const data = await response.json();
+        if (data.success) {
+            showNotification('Lista excluída com sucesso!', 'success');
+            await fetchLists(); // Recarrega as listas
+            renderUserLists(); // Renderiza novamente a tela de seleção
+        } else {
+            showNotification('Erro ao excluir lista: ' + data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Erro ao excluir lista:', error);
+        showNotification('Erro de rede ao excluir lista.', 'error');
+    }
+}
+
+async function fetchItems(listId) {
+    try {
+        const response = await fetch(`/api/listas/${listId}/itens`);
+        const data = await response.json();
+        if (data.success) {
+            shoppingList = data.data;
+        } else {
+            showNotification('Erro ao carregar itens da lista: ' + data.message, 'error');
+            shoppingList = [];
+        }
+    } catch (error) {
+        console.error('Erro de rede ao buscar itens:', error);
+        showNotification('Erro de rede ao carregar itens da lista.', 'error');
+        shoppingList = [];
+    }
+}
+
+async function addItem(item) {
+    try {
+        const response = await fetch(`/api/listas/${currentListId}/itens`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(item)
+        });
+        const data = await response.json();
+        if (data.success) {
+            showNotification('Item adicionado!', 'success');
+            await fetchItems(currentListId); // Recarrega os itens
+            renderShoppingList();
+        } else {
+            showNotification('Erro ao adicionar item: ' + data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Erro ao adicionar item:', error);
+        showNotification('Erro de rede ao adicionar item.', 'error');
+    }
+}
+
+async function updateItem(itemId, updates) {
+    try {
+        const response = await fetch(`/api/itens/${itemId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updates)
+        });
+        const data = await response.json();
+        if (data.success) {
+            showNotification('Item atualizado!', 'success');
+            await fetchItems(currentListId);
+            renderShoppingList();
+        } else {
+            showNotification('Erro ao atualizar item: ' + data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Erro ao atualizar item:', error);
+        showNotification('Erro de rede ao atualizar item.', 'error');
+    }
+}
+
+async function deleteItem(itemId) {
+    if (!confirm('Tem certeza que deseja excluir este item?')) {
+        return;
+    }
+    try {
+        const response = await fetch(`/api/itens/${itemId}`, {
+            method: 'DELETE'
+        });
+        const data = await response.json();
+        if (data.success) {
+            showNotification('Item excluído!', 'success');
+            await fetchItems(currentListId);
+            renderShoppingList();
+        } else {
+            showNotification('Erro ao excluir item: ' + data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Erro ao excluir item:', error);
+        showNotification('Erro de rede ao excluir item.', 'error');
+    }
+}
+
+async function clearCompletedItems() {
+    if (!currentListId) return;
+    try {
+        const response = await fetch(`/api/listas/${currentListId}/itens/concluidos`, {
+            method: 'DELETE'
+        });
+        const data = await response.json();
+        if (data.success) {
+            showNotification('Itens concluídos removidos!', 'success');
+            await fetchItems(currentListId);
+            renderShoppingList();
+        } else {
+            showNotification('Erro ao limpar itens concluídos: ' + data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Erro ao limpar itens concluídos:', error);
+        showNotification('Erro de rede ao limpar itens concluídos.', 'error');
+    }
+}
+
+async function clearAllItems() {
+    if (!currentListId) return;
+    if (!confirm('Tem certeza que deseja limpar TODOS os itens desta lista?')) {
+        return;
+    }
+    try {
+        const response = await fetch(`/api/listas/${currentListId}/itens`, {
+            method: 'DELETE'
+        });
+        const data = await response.json();
+        if (data.success) {
+            showNotification('Lista limpa com sucesso!', 'success');
+            await fetchItems(currentListId);
+            renderShoppingList();
+        } else {
+            showNotification('Erro ao limpar a lista: ' + data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Erro ao limpar a lista:', error);
+        showNotification('Erro de rede ao limpar a lista.', 'error');
+    }
+}
+
+// Funções de Renderização
+function renderUserLists() {
+    elements.userListsContainer.innerHTML = ''; // Limpa a lista existente
+
+    if (userLists.length === 0) {
+        elements.userListsContainer.innerHTML = `
+            <li class="empty-state-list">
+                <i class="fas fa-folder-open empty-icon"></i>
+                <p>Nenhuma lista criada ainda.</p>
+                <p>Use o botão "Criar Nova Lista" para começar!</p>
+            </li>
+        `;
+        return;
+    }
+
+    userLists.forEach(list => {
+        const li = document.createElement('li');
+        li.classList.add('list-card');
+        li.dataset.id = list.id;
+
+        li.innerHTML = `
+            <div class="list-card-info">
+                <span class="list-card-name">${list.nome}</span>
+                <span class="list-card-meta">ID: ${list.id}</span>
+            </div>
+            <div class="list-card-actions">
+                <button class="edit-list-btn" aria-label="Renomear lista">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="delete-list-btn" aria-label="Excluir lista">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </div>
+        `;
+
+        // Evento para abrir a lista
+        li.querySelector('.list-card-info').addEventListener('click', () => {
+            openShoppingList(list.id, list.nome);
+        });
+
+        // Evento para renomear lista
+        li.querySelector('.edit-list-btn').addEventListener('click', async (e) => {
+            e.stopPropagation(); // Evita que o clique propague para o card
+            const newName = prompt('Novo nome para a lista:', list.nome);
+            if (newName && newName.trim() !== '' && newName !== list.nome) {
+                await updateListName(list.id, newName.trim());
+            } else if (newName !== null && newName.trim() === '') {
+                showNotification('O nome da lista não pode ser vazio.', 'warning');
+            }
+        });
+
+        // Evento para excluir lista
+        li.querySelector('.delete-list-btn').addEventListener('click', (e) => {
+            e.stopPropagation(); // Evita que o clique propague para o card
+            deleteList(list.id);
+        });
+
+        elements.userListsContainer.appendChild(li);
+    });
+}
+
+async function updateListName(listId, newName) {
+    try {
+        const response = await fetch(`/api/listas/${listId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: newName })
+        });
+        const data = await response.json();
+        if (data.success) {
+            showNotification('Lista renomeada com sucesso!', 'success');
+            await fetchLists(); // Recarrega e renderiza as listas
+            renderUserLists();
+            // Se a lista renomeada estiver aberta, atualiza o cabeçalho
+            if (currentListId === listId) {
+                updateListHeader(newName);
+            }
+        } else {
+            showNotification('Erro ao renomear lista: ' + data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Erro de rede ao renomear lista:', error);
+        showNotification('Erro de rede ao renomear lista.', 'error');
+    }
+}
+
+
+// Abre uma lista de compras específica
+async function openShoppingList(listId, listName) {
+    console.log(`Abrindo lista: ${listName} (ID: ${listId})`);
+    currentListId = listId;
+    updateListHeader(listName); // Atualiza o título na tela da lista
+
+    await fetchItems(listId); // Carrega os itens para a lista selecionada
+    renderShoppingList(); // Renderiza os itens
+    showMainScreen(); // Mostra a tela principal
+}
+
+
+function renderShoppingList() {
+    elements.shoppingList.innerHTML = '';
+    const filteredList = shoppingList.filter(item => {
+        if (currentFilter === 'all') return true;
+        if (currentFilter === 'pending') return !item.concluido;
+        if (currentFilter === 'completed') return item.concluido;
+    });
+
+    if (filteredList.length === 0) {
+        elements.emptyState.style.display = 'block';
+    } else {
+        elements.emptyState.style.display = 'none';
+    }
+
+    filteredList.forEach(item => {
+        const li = document.createElement('li');
+        li.classList.add('item');
+        if (item.concluido) {
+            li.classList.add('completed');
+        }
+        li.dataset.id = item.id;
+        li.dataset.category = item.categoria || 'geral';
+
+        li.innerHTML = `
+            <div class="item-actions left">
+                <button class="edit-btn" data-id="${item.id}">
+                    <i class="fas fa-edit"></i>
+                </button>
+            </div>
+            <input type="checkbox" class="item-checkbox" ${item.concluido ? 'checked' : ''} data-id="${item.id}">
+            <div class="item-info">
+                <span class="item-name">${item.nome}</span>
+                <span class="item-details">
+                    Qtd: ${item.quantidade} 
+                    ${item.categoria && item.categoria !== 'geral' ? ` | Categoria: ${item.categoria}` : ''}
+                </span>
+            </div>
+            <span class="item-price-display">${formatCurrency(item.preco * item.quantidade)}</span>
+            <div class="item-actions right">
+                <button class="delete-btn" data-id="${item.id}">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </div>
+        `;
+
+        elements.shoppingList.appendChild(li);
+
+        // Adicionar eventos de swipe (touch) para editar/deletar
+        let startX;
+        let deltaX;
+        let isSwiping = false;
+
+        // Touch events com passive: true
+        li.addEventListener('touchstart', (e) => {
+            startX = e.touches[0].clientX;
+            deltaX = 0;
+            isSwiping = false;
+            li.style.transition = 'none';
+        }, { passive: true });
+        li.addEventListener('touchmove', (e) => {
+            deltaX = e.touches[0].clientX - startX;
+            if (Math.abs(deltaX) > 20) {
+                isSwiping = true;
+                li.style.transform = `translateX(${deltaX}px)`;
+            }
+        }, { passive: true });
+        li.addEventListener('touchend', () => {
+            li.style.transition = 'transform 0.2s ease-out'; // Reabilita a transição
+            if (isSwiping) {
+                if (deltaX < -60) { // Deslizou para a esquerda (revelar delete)
+                    li.classList.add('swipe-left');
+                    li.classList.remove('swipe-right');
+                    li.style.transform = `translateX(-80px)`; // Ajustar para o tamanho do botão
+                } else if (deltaX > 60) { // Deslizou para a direita (revelar edit)
+                    li.classList.add('swipe-right');
+                    li.classList.remove('swipe-left');
+                    li.style.transform = `translateX(80px)`; // Ajustar para o tamanho do botão
+                } else {
+                    li.classList.remove('swipe-left', 'swipe-right');
+                    li.style.transform = `translateX(0)`;
+                }
+            }
+            isSwiping = false;
+        });
+
+        // Evento para fechar swipe ao clicar fora do item
+        li.addEventListener('click', (e) => {
+            if (!e.target.closest('.item-actions')) {
+                // Se o clique não foi nos botões de ação, feche o swipe
+                li.classList.remove('swipe-left', 'swipe-right');
+                li.style.transform = `translateX(0)`;
+            }
+        });
+
+
+        // Eventos para desktop (mouse) para um efeito similar de swipe
+        let mouseDownX;
+        let mouseDeltaX;
+        let isMouseDown = false;
+
+        li.addEventListener('mousedown', (e) => {
+            if (e.button === 0) { // Botão esquerdo do mouse
+                mouseDownX = e.clientX;
+                mouseDeltaX = 0;
+                isMouseDown = true;
+                li.style.transition = 'none';
+            }
+        });
+
+        li.addEventListener('mousemove', (e) => {
+            if (isMouseDown) {
+                mouseDeltaX = e.clientX - mouseDownX;
+                if (Math.abs(mouseDeltaX) > 10) {
+                    li.style.transform = `translateX(${mouseDeltaX}px)`;
+                }
+            }
+        });
+
+        li.addEventListener('mouseup', () => {
+            if (isMouseDown) {
+                li.style.transition = 'transform 0.2s ease-out';
+                if (mouseDeltaX < -60) {
+                    li.classList.add('swipe-left');
+                    li.classList.remove('swipe-right');
+                    li.style.transform = `translateX(-80px)`;
+                } else if (mouseDeltaX > 60) {
+                    li.classList.add('swipe-right');
+                    li.classList.remove('swipe-left');
+                    li.style.transform = `translateX(80px)`;
+                } else {
+                    li.classList.remove('swipe-left', 'swipe-right');
+                    li.style.transform = `translateX(0)`;
+                }
+            }
+            isMouseDown = false;
+        });
+
+        li.addEventListener('mouseleave', () => {
+            if (isMouseDown) { // Se o mouse sair enquanto arrasta, resetar
+                li.style.transition = 'transform 0.2s ease-out';
+                li.classList.remove('swipe-left', 'swipe-right');
+                li.style.transform = `translateX(0)`;
+            }
+            isMouseDown = false;
+        });
+
+
+        // Eventos dos botões de ação
+        li.querySelector('.item-checkbox').addEventListener('change', async (e) => {
+            const itemId = parseInt(e.target.dataset.id);
+            const isCompleted = e.target.checked;
+            await updateItem(itemId, { concluido: isCompleted });
+        });
+
+        li.querySelector('.edit-btn').addEventListener('click', (e) => {
+            const itemId = parseInt(e.currentTarget.dataset.id);
+            const itemToEdit = shoppingList.find(i => i.id === itemId);
+            if (itemToEdit) {
+                editingItem = itemToEdit;
+                elements.itemName.value = itemToEdit.nome;
+                elements.itemQuantity.value = itemToEdit.quantidade;
+                elements.itemPrice.value = itemToEdit.preco;
+                selectedCategory = itemToEdit.categoria || 'geral'; // Define a categoria selecionada
+                updateCategoryButtonText(selectedCategory);
+                elements.addItemBtn.textContent = 'Salvar Edição';
+                elements.addItemBtn.classList.add('btn-warning');
+                showNotification('Editando item...', 'info');
+            }
+        });
+
+        li.querySelector('.delete-btn').addEventListener('click', (e) => {
+            const itemId = parseInt(e.currentTarget.dataset.id);
+            deleteItem(itemId);
+        });
+    });
+
+    updateSummary();
+}
+
+function updateSummary() {
+    const totalItemsCount = shoppingList.length;
+    const completedItemsCount = shoppingList.filter(item => item.concluido).length;
+    const pendingItemsCount = totalItemsCount - completedItemsCount;
+
+    const totalCost = shoppingList.reduce((sum, item) => sum + (item.quantidade * item.preco), 0);
+    const completedCost = shoppingList.filter(item => item.concluido)
+        .reduce((sum, item) => sum + (item.quantidade * item.preco), 0);
+
+    elements.totalItems.textContent = totalItemsCount;
+    elements.totalPrice.textContent = formatCurrency(totalCost);
+    elements.summaryItems.textContent = `${totalItemsCount} (${pendingItemsCount} pendentes)`;
+    elements.summaryCompleted.textContent = completedItemsCount;
+    elements.summaryTotal.textContent = formatCurrency(totalCost); // Ou completedCost se preferir o total dos comprados
+}
+
+function updateCategoryButtonText(category) {
+    const btn = document.getElementById('openCategoryModalBtn');
+    const categoryName = category.charAt(0).toUpperCase() + category.slice(1);
+    btn.innerHTML = `<i class="fas fa-tag"></i> Categoria: ${categoryName}`;
+}
+
+// Event Listeners
+document.addEventListener('DOMContentLoaded', async () => {
+    // Inicializa carregando as listas do usuário e mostrando a tela de seleção
+    await fetchLists();
+    showListSelectionScreen(); // Inicia o app na tela de seleção de listas
+
+    // Eventos da Tela de Seleção de Listas
+    elements.openCreateListModalBtn.addEventListener('click', () => {
+        elements.createListModal.classList.add('active');
+        elements.modalOverlay.classList.add('active');
+    });
+
+    elements.closeCreateListModalBtn.addEventListener('click', () => {
+        elements.createListModal.classList.remove('active');
+        elements.modalOverlay.classList.remove('active');
+        elements.newListName.value = ''; // Limpa o campo
+    });
+
+    elements.createListForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const listName = elements.newListName.value.trim();
+        if (listName) {
+            await createList(listName);
+            elements.createListModal.classList.remove('active');
+            elements.modalOverlay.classList.remove('active');
+            elements.newListName.value = ''; // Limpa o campo
+        } else {
+            showNotification('Por favor, digite um nome para a lista.', 'warning');
+        }
+    });
+
+    // Botão de voltar para a tela de seleção de listas (na mainScreen)
+    if (elements.backToListsBtn) {
+        elements.backToListsBtn.addEventListener('click', () => {
+            showListSelectionScreen();
+        });
+    }
+
+    // Eventos da Tela Principal da Lista de Compras
+    elements.form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = elements.itemName.value.trim();
+        const quantity = parseInt(elements.itemQuantity.value);
+        const price = parseFloat(elements.itemPrice.value) || 0; // Se vazio, default para 0
+
+        if (!name || quantity <= 0) {
+            showNotification('Por favor, preencha o nome e uma quantidade válida.', 'warning');
+            return;
+        }
+
+        if (editingItem) {
+            // Atualizar item existente
+            await updateItem(editingItem.id, {
+                nome: name,
+                quantidade: quantity,
+                preco: price,
+                categoria: selectedCategory
+            });
+            editingItem = null; // Reseta o estado de edição
+            elements.addItemBtn.textContent = 'Adicionar';
+            elements.addItemBtn.classList.remove('btn-warning');
+        } else {
+            // Adicionar novo item
+            await addItem({
+                nome: name,
+                quantidade: quantity,
+                preco: price,
+                categoria: selectedCategory,
+                concluido: false,
+                lista_id: currentListId
+            });
+        }
+
+        elements.itemName.value = '';
+        elements.itemQuantity.value = '1';
+        elements.itemPrice.value = '';
+        selectedCategory = 'geral'; // Reseta a categoria selecionada
+        updateCategoryButtonText(selectedCategory); // Atualiza o texto do botão de categoria
+        elements.itemName.focus();
+    });
+
+    // Filtros
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            currentFilter = e.target.dataset.filter;
+            renderShoppingList();
+        });
+    });
+
+    // Limpar concluídos
+    elements.clearCompleted.addEventListener('click', clearCompletedItems);
+
+    // Limpar tudo
+    elements.clearAll.addEventListener('click', clearAllItems);
+
+
+    // Modais (Categoria)
+    elements.openCategoryModalBtn.addEventListener('click', () => {
+        elements.categoryModal.classList.add('active');
+        elements.modalOverlay.classList.add('active');
+        // Marca a categoria atualmente selecionada no modal
+        elements.categoryOptions.forEach(option => {
+            option.classList.remove('selected');
+            if (option.dataset.value === selectedCategory) {
+                option.classList.add('selected');
+            }
+        });
+    });
+
+    elements.closeCategoryModal && elements.closeCategoryModal.addEventListener('click', () => {
+        elements.categoryModal.classList.remove('active');
+        elements.modalOverlay.classList.remove('active');
+    });
+
+    elements.categoryOptions.forEach(option => {
+        option.addEventListener('click', (e) => {
+            elements.categoryOptions.forEach(opt => opt.classList.remove('selected'));
+            e.currentTarget.classList.add('selected');
+            selectedCategory = e.currentTarget.dataset.value;
+            updateCategoryButtonText(selectedCategory);
+            elements.categoryModal.classList.remove('active');
+            elements.modalOverlay.classList.remove('active');
+            showNotification(`Categoria definida para: ${selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)}`, 'info');
+        });
+    });
+
+    // Fechar qualquer modal clicando no overlay
+    elements.modalOverlay.addEventListener('click', (e) => {
+        if (e.target.classList.contains('modal-overlay')) {
+            elements.createListModal.classList.remove('active');
+            elements.categoryModal.classList.remove('active');
+            elements.modalOverlay.classList.remove('active');
+            // Limpa o estado de edição se o modal de categoria for fechado durante a edição
+            if (editingItem) {
+                elements.itemName.value = editingItem.nome;
+                elements.itemQuantity.value = editingItem.quantidade;
+                elements.itemPrice.value = editingItem.preco;
+                updateCategoryButtonText(editingItem.categoria || 'geral');
+            }
+        }
+    });
+
+    // Ajuste inicial do texto do botão de categoria
+    updateCategoryButtonText(selectedCategory);
+
+    // Adiciona o CSS para animação de pulse (melhor no CSS)
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    `;
+    document.head.appendChild(style);
+});
