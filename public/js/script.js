@@ -329,10 +329,10 @@ function renderUserLists() {
         li.classList.add('list-card');
         li.dataset.id = list.id;
 
+        // <span class="list-card-meta">ID: ${list.id}</span> Exibe o ID na lista
         li.innerHTML = `
             <div class="list-card-info">
                 <span class="list-card-name">${list.nome}</span>
-                <span class="list-card-meta">ID: ${list.id}</span>
             </div>
             <div class="list-card-actions">
                 <button class="edit-list-btn" aria-label="Renomear lista">
