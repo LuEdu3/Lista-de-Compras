@@ -981,3 +981,7 @@ body {
         padding: 6px 10px;
     }
 }
+
+.create-list-modal .input-group {
+    margin-bottom: 20px; /* Ajuste o valor conforme desejar */
+}
