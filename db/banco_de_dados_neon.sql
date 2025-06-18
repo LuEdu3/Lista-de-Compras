@@ -20,3 +20,5 @@ CREATE TABLE palavras_aprendidas (
     palavra VARCHAR(100) NOT NULL,
     categoria VARCHAR(50) NOT NULL
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_palavra_unique ON palavras_aprendidas(palavra);
