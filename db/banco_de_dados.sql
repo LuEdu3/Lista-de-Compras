@@ -17,9 +17,12 @@ CREATE TABLE itens (
     FOREIGN KEY (lista_id) REFERENCES listas(id) ON DELETE CASCADE
 );
 
--- DROP DATABASE lista_de_compras;
--- SET SQL_SAFE_UPDATES = 0;
--- SET SQL_SAFE_UPDATES = 1;
+-- Tabela para aprendizado de categorias por palavra
+CREATE TABLE IF NOT EXISTS palavras_aprendidas (
+    id INTEGER PRIMARY KEY AUTO_INCREMENT,
+    palavra VARCHAR(100) NOT NULL,
+    categoria VARCHAR(50) NOT NULL
+);
 
 UPDATE itens SET categoria = 'hortifruti' WHERE LOWER(nome) REGEXP 'maçã|banana|laranja|pera|uva|abacaxi|fruta|melancia|mamão|limão|morango|alface|tomate|cenoura|batata|cebola|alho|verdura|legume|pepino|abobrinha|chuchu';
 UPDATE itens SET categoria = 'alimentos' WHERE LOWER(nome) REGEXP 'arroz|feijão|macarrão|massa|farinha|açúcar|sal|óleo|trigo|milho';
@@ -31,3 +34,8 @@ UPDATE itens SET categoria = 'limpeza' WHERE LOWER(nome) REGEXP 'sabão|detergen
 UPDATE itens SET categoria = 'higiene' WHERE LOWER(nome) REGEXP 'shampoo|sabonete|pasta de dente|escova|fio dental|higiene|absorvente|desodorante|papel higiênico';
 UPDATE itens SET categoria = 'congelados' WHERE LOWER(nome) REGEXP 'pizza|lasanha|sorvete|congelado|hamburguer|nuggets';
 UPDATE itens SET categoria = 'casa' WHERE LOWER(nome) REGEXP 'vassoura|balde|pano|rodo|casa|lampada|pregos|parafuso|ferramenta';
+
+
+-- DROP DATABASE lista_de_compras;
+-- SET SQL_SAFE_UPDATES = 0;
+-- SET SQL_SAFE_UPDATES = 1;

@@ -123,6 +123,18 @@ app.post('/api/listas/:listaId/itens', (req, res) => {
                 console.error('Erro ao adicionar item:', err);
                 return res.status(500).json({ success: false, message: 'Erro ao adicionar item', error: err });
             }
+            // Salva palavra aprendida ao adicionar item
+            if (categoria && nome) {
+                connection.query(
+                    'INSERT INTO palavras_aprendidas (palavra, categoria) VALUES (?, ?) ON DUPLICATE KEY UPDATE categoria = VALUES(categoria)',
+                    [nome.toLowerCase().trim(), categoria],
+                    (err) => {
+                        if (err) {
+                            console.error('Erro ao salvar palavra aprendida:', err);
+                        }
+                    }
+                );
+            }
             res.status(201).json({ success: true, message: 'Item adicionado com sucesso!', itemId: result.insertId });
         }
     );
@@ -151,6 +163,18 @@ app.put('/api/itens/:id', (req, res) => {
         }
         if (result.affectedRows === 0) {
             return res.status(404).json({ success: false, message: 'Item não encontrado.' });
+        }
+        // Salva palavra aprendida ao atualizar item
+        if (categoria && nome) {
+            connection.query(
+                'INSERT INTO palavras_aprendidas (palavra, categoria) VALUES (?, ?) ON DUPLICATE KEY UPDATE categoria = VALUES(categoria)',
+                [nome.toLowerCase().trim(), categoria],
+                (err) => {
+                    if (err) {
+                        console.error('Erro ao salvar palavra aprendida:', err);
+                    }
+                }
+            );
         }
         res.json({ success: true, message: 'Item atualizado com sucesso.' });
     });
@@ -193,6 +217,26 @@ app.delete('/api/listas/:listaId/itens', (req, res) => {
         }
         res.json({ success: true, message: 'Lista limpa com sucesso', removedCount: result.affectedRows });
     });
+});
+
+// Endpoint para buscar categoria aprendida de uma palavra
+app.get('/api/categoria-aprendida/:palavra', (req, res) => {
+    const palavra = req.params.palavra.toLowerCase().trim();
+    connection.query(
+        'SELECT categoria FROM palavras_aprendidas WHERE palavra = ? LIMIT 1',
+        [palavra],
+        (err, results) => {
+            if (err) {
+                console.error('Erro ao buscar categoria aprendida:', err);
+                return res.status(500).json({ success: false, message: 'Erro ao buscar categoria aprendida', error: err });
+            }
+            if (results.length > 0) {
+                res.json({ success: true, categoria: results[0].categoria });
+            } else {
+                res.json({ success: false, categoria: null });
+            }
+        }
+    );
 });
 
 // Middleware de tratamento de erros

@@ -5,6 +5,7 @@ let editingItem = null;
 let currentListId = null; // ID da lista atualmente aberta
 let userLists = []; // Array para armazenar as listas de compras do usuário
 let selectedCategory = 'geral'; // Categoria padrão
+let categoriaSelecionadaManualmente = false; // Flag para controle de seleção manual de categoria
 
 // Elementos DOM
 const elements = {
@@ -415,6 +416,9 @@ function renderShoppingList() {
         if (currentFilter === 'all') return true;
         if (currentFilter === 'pending') return !item.concluido;
         if (currentFilter === 'completed') return item.concluido;
+        if (elements.categoryFilter && elements.categoryFilter.value !== 'all') {
+            return item.categoria === elements.categoryFilter.value;
+        }
     });
 
     if (filteredList.length === 0) {
@@ -441,7 +445,7 @@ function renderShoppingList() {
             <input type="checkbox" class="item-checkbox" ${item.concluido ? 'checked' : ''} data-id="${item.id}">
             <div class="item-info">
                 <span class="item-name">${item.nome}</span>
-                <span class="item-category-label">${item.categoria && item.categoria !== 'geral' ? item.categoria.charAt(0).toUpperCase() + item.categoria.slice(1) : ''}</span>
+                <span class="item-category-label">${item.categoria ? item.categoria.charAt(0).toUpperCase() + item.categoria.slice(1) : 'Geral'}</span>
                 <span class="item-details">
                     Qtd: ${item.quantidade}
                 </span>
@@ -642,20 +646,40 @@ function detectarCategoriaAutomatica(nomeItem) {
     return "geral";
 }
 
+// Busca categoria aprendida no backend
+async function buscarCategoriaAprendida(nomeItem) {
+    try {
+        const response = await fetch(`/api/categoria-aprendida/${encodeURIComponent(nomeItem.toLowerCase().trim())}`);
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.categoria) {
+                return data.categoria;
+            }
+        }
+    } catch (e) {
+        // Silencia erro
+    }
+    return null;
+}
+
+// Nova função: detectar categoria com aprendizado
+async function detectarCategoriaComAprendizado(nomeItem) {
+    const aprendida = await buscarCategoriaAprendida(nomeItem);
+    if (aprendida) return aprendida;
+    return detectarCategoriaAutomatica(nomeItem); // Usa a função existente para detecção automática
+}
+
 // Atualiza categoria automaticamente ao digitar o nome do item
 if (elements.itemName) {
-    elements.itemName.addEventListener('input', function () {
+    elements.itemName.addEventListener('input', async function () {
+        if (categoriaSelecionadaManualmente) return; // Não sobrescreve escolha manual
         const nome = elements.itemName.value;
-        const categoriaDetectada = detectarCategoriaAutomatica(nome);
+        const categoriaDetectada = await detectarCategoriaComAprendizado(nome);
         selectedCategory = categoriaDetectada;
-        
-        // Atualizar filtro se existir
         if (elements.categoryFilter) {
             elements.categoryFilter.value = categoriaDetectada;
         }
-        
-        // Atualizar botão se existir
-        updateCategoryButtonText(categoriaDetectada);
+        updateCategoryButtonText(selectedCategory);
     });
 }
 
@@ -709,16 +733,18 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
-        // Sempre detecta a categoria automaticamente
-        const categoriaDetectada = detectarCategoriaAutomatica(name);
-        selectedCategory = categoriaDetectada;
+        let categoriaParaSalvar = selectedCategory;
+        if (!categoriaSelecionadaManualmente) {
+            categoriaParaSalvar = await detectarCategoriaComAprendizado(name);
+            selectedCategory = categoriaParaSalvar;
+        }
 
         if (editingItem) {
             await updateItem(editingItem.id, {
                 nome: name,
                 quantidade: quantity,
                 preco: price,
-                categoria: selectedCategory
+                categoria: categoriaParaSalvar
             });
             editingItem = null;
             elements.addItemBtn.textContent = 'Adicionar';
@@ -728,7 +754,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 nome: name,
                 quantidade: quantity,
                 preco: price,
-                categoria: selectedCategory,
+                categoria: categoriaParaSalvar,
                 concluido: false,
                 lista_id: currentListId
             });
@@ -740,6 +766,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         selectedCategory = 'geral';
         updateCategoryButtonText(selectedCategory);
         elements.itemName.focus();
+        categoriaSelecionadaManualmente = false;
     });
 
     // Filtros
@@ -782,6 +809,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             elements.categoryOptions.forEach(opt => opt.classList.remove('selected'));
             e.currentTarget.classList.add('selected');
             selectedCategory = e.currentTarget.dataset.value;
+            categoriaSelecionadaManualmente = true;
             updateCategoryButtonText(selectedCategory);
             elements.categoryModal.classList.remove('active');
             elements.modalOverlay.classList.remove('active');
@@ -804,6 +832,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
     });
+
+    // Atualiza a lista ao mudar o filtro de categoria
+    if (elements.categoryFilter) {
+        elements.categoryFilter.addEventListener('change', () => {
+            renderShoppingList();
+        });
+    }
 
     // Ajuste inicial do texto do botão de categoria
     updateCategoryButtonText(selectedCategory);
