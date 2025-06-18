@@ -21,10 +21,11 @@ const elements = {
     summaryTotal: document.getElementById('summaryTotal'),
     clearCompleted: document.getElementById('clearCompleted'),
     clearAll: document.getElementById('clearAll'),
-    categoryBtns: document.querySelectorAll('.category-btn'),
-    categoryModal: document.getElementById('categoryModal'),
+    categoryBtns: document.querySelectorAll('.category-btn'),    categoryModal: document.getElementById('categoryModal'),
     closeCategoryModal: document.getElementById('closeCategoryModal'),
     categoryOptions: document.querySelectorAll('.category-option'),
+    openCategoryModalBtn: document.getElementById('openCategoryModalBtn'),
+    categoryFilter: document.getElementById('categoryFilter'),
     notificationContainer: document.getElementById('notificationContainer'),
 
 
@@ -605,8 +606,10 @@ function updateSummary() {
 
 function updateCategoryButtonText(category) {
     const btn = document.getElementById('openCategoryModalBtn');
-    const categoryName = category.charAt(0).toUpperCase() + category.slice(1);
-    btn.innerHTML = `<i class="fas fa-tag"></i> Categoria: ${categoryName}`;
+    if (btn) {
+        const categoryName = category.charAt(0).toUpperCase() + category.slice(1);
+        btn.innerHTML = `<i class="fas fa-tag"></i> Categoria: ${categoryName}`;
+    }
 }
 
 // Mapeamento de palavras-chave para categorias automáticas
@@ -625,10 +628,13 @@ const categoriaPorPalavra = [
 ];
 
 function detectarCategoriaAutomatica(nomeItem) {
-    const nome = nomeItem.toLowerCase();
+    const nome = nomeItem.toLowerCase().trim();
+    
     for (const grupo of categoriaPorPalavra) {
         for (const palavra of grupo.palavras) {
-            if (nome.includes(palavra)) {
+            // Usar regex para match mais preciso
+            const regex = new RegExp(`\\b${palavra}\\b`, 'i');
+            if (regex.test(nome)) {
                 return grupo.categoria;
             }
         }
@@ -637,13 +643,19 @@ function detectarCategoriaAutomatica(nomeItem) {
 }
 
 // Atualiza categoria automaticamente ao digitar o nome do item
-if (elements.itemName && elements.itemCategory) {
+if (elements.itemName) {
     elements.itemName.addEventListener('input', function () {
         const nome = elements.itemName.value;
         const categoriaDetectada = detectarCategoriaAutomatica(nome);
-        elements.itemCategory.value = categoriaDetectada;
         selectedCategory = categoriaDetectada;
-        updateCategoryButtonText && updateCategoryButtonText(categoriaDetectada);
+        
+        // Atualizar filtro se existir
+        if (elements.categoryFilter) {
+            elements.categoryFilter.value = categoriaDetectada;
+        }
+        
+        // Atualizar botão se existir
+        updateCategoryButtonText(categoriaDetectada);
     });
 }
 
@@ -745,20 +757,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Limpar tudo
     elements.clearAll.addEventListener('click', clearAllItems);
-
-
     // Modais (Categoria)
-    elements.openCategoryModalBtn.addEventListener('click', () => {
-        elements.categoryModal.classList.add('active');
-        elements.modalOverlay.classList.add('active');
-        // Marca a categoria atualmente selecionada no modal
-        elements.categoryOptions.forEach(option => {
-            option.classList.remove('selected');
-            if (option.dataset.value === selectedCategory) {
-                option.classList.add('selected');
-            }
+    if (elements.openCategoryModalBtn) {
+        elements.openCategoryModalBtn.addEventListener('click', () => {
+            elements.categoryModal.classList.add('active');
+            elements.modalOverlay.classList.add('active');
+            // Marca a categoria atualmente selecionada no modal
+            elements.categoryOptions.forEach(option => {
+                option.classList.remove('selected');
+                if (option.dataset.value === selectedCategory) {
+                    option.classList.add('selected');
+                }
+            });
         });
-    });
+    }
 
     elements.closeCategoryModal && elements.closeCategoryModal.addEventListener('click', () => {
         elements.categoryModal.classList.remove('active');

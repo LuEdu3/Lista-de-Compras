@@ -64,12 +64,16 @@
             </div>
         </header>
 
-        <main class="container">
-            <form id="addItemForm" class="add-item-form">
+        <main class="container">            <form id="addItemForm" class="add-item-form">
                 <div class="input-group">
                     <input type="text" id="itemName" placeholder="Nome do item" required>
                     <input type="number" id="itemQuantity" placeholder="Qtd" value="1" min="1">
                     <input type="number" id="itemPrice" placeholder="Preço (opcional)" step="0.01" min="0">
+                </div>
+                <div class="category-selection">
+                    <button type="button" id="openCategoryModalBtn" class="btn btn-secondary">
+                        <i class="fas fa-tag"></i> Categoria: Geral
+                    </button>
                 </div>
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary" id="addItemBtn">
@@ -82,6 +86,18 @@
                 <button class="filter-btn active" data-filter="all">Todos</button>
                 <button class="filter-btn" data-filter="pending">Pendentes</button>
                 <button class="filter-btn" data-filter="completed">Comprados</button>
+            </div>
+
+            <div class="filter-container">
+                <label for="categoryFilter">Filtrar por Categoria:</label>
+                <select id="categoryFilter">
+                    <option value="all">Todas</option>
+                    <option value="geral">Geral</option>
+                    <option value="alimentos">Alimentos</option>
+                    <option value="bebidas">Bebidas</option>
+                    <option value="limpeza">Limpeza</option>
+                    <option value="higiene">Higiene</option>
+                </select>
             </div>
 
             <ul id="shoppingList" class="shopping-list">
@@ -178,6 +194,8 @@
                 </div>
             </div>
         </div>
+
+        <div id="categoriaVisual"></div>
     </div>
 
     <div id="notificationContainer" class="notification-container"></div>

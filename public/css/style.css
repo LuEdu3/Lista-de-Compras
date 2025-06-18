@@ -385,6 +385,33 @@ body {
     background-color: var(--background);
 }
 
+/* Estilos para o filtro de categoria */
+.filter-container {
+    margin: 20px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.filter-container label {
+    font-size: 1rem;
+    color: var(--text-secondary);
+}
+
+.filter-container select {
+    padding: 5px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background-color: var(--surface);
+    color: var(--text-primary);
+    font-size: 1rem;
+    transition: var(--transition);
+}
+
+.filter-container select:hover {
+    border-color: var(--primary-color);
+}
+
 /* Empty State */
 .empty-state {
     text-align: center;
@@ -798,6 +825,65 @@ body {
     background-color: rgba(255, 255, 255, 0.25);
 }
 
+#categoriaVisual {
+    display: none;
+    font-size: 14px;
+    color: #555;
+    margin-top: 5px;
+}
+
+/* Seleção de categoria no formulário */
+.category-selection {
+    margin: 10px 0;
+    display: flex;
+    justify-content: center;
+}
+
+#openCategoryModalBtn {
+    min-width: 150px;
+    font-size: 0.9rem;
+    background-color: var(--secondary-color);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#openCategoryModalBtn:hover {
+    background-color: var(--secondary-dark);
+    transform: translateY(-1px);
+}
+
+#openCategoryModalBtn i {
+    font-size: 0.8rem;
+}
+
+/* Melhorar responsividade do formulário */
+@media (max-width: 768px) {
+    .category-selection {
+        margin: 8px 0;
+    }
+    
+    #openCategoryModalBtn {
+        width: 100%;
+        min-width: unset;
+        justify-content: center;
+    }
+    
+    .add-item-form .input-group {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .add-item-form .input-group input {
+        width: 100%;
+    }
+}
 
 /* Animações */
 @keyframes slideIn {

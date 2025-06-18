@@ -1,21 +1,24 @@
 // Service Worker para PWA
 const CACHE_NAME = 'lista-compras-v1';
 const urlsToCache = [
-    '/',
-    '/index.html',
-    '/css/style.css',
-    '/js/script.js',
-    '/manifest.json',
-    '/assets/icons/icon-192.png',
-    '/assets/icons/icon-512.png',
-    // Adicione aqui outros recursos estáticos que você queira cachear
+    './', // Caminho relativo para index
+    './css/style.css',
+    './js/script.js',
+    './manifest.json',
+    // Remover recursos que podem não existir
+    // './assets/icons/icon-192.png',
+    // './assets/icons/icon-512.png',
 ];
 
 self.addEventListener('install', event => {
     event.waitUntil(
         caches.open(CACHE_NAME).then(cache => {
             console.log('Service Worker: Cacheando arquivos...');
-            return cache.addAll(urlsToCache);
+            // Cachea apenas recursos essenciais primeiro
+            return cache.addAll(urlsToCache.filter(url => url)); // Remove undefined/null
+        }).then(() => {
+            // Força ativação imediata do SW
+            return self.skipWaiting();
         }).catch(error => {
             console.error('Service Worker: Falha ao cachear', error);
         })
