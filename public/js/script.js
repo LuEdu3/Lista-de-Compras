@@ -440,9 +440,9 @@ function renderShoppingList() {
             <input type="checkbox" class="item-checkbox" ${item.concluido ? 'checked' : ''} data-id="${item.id}">
             <div class="item-info">
                 <span class="item-name">${item.nome}</span>
+                <span class="item-category-label">${item.categoria && item.categoria !== 'geral' ? item.categoria.charAt(0).toUpperCase() + item.categoria.slice(1) : ''}</span>
                 <span class="item-details">
-                    Qtd: ${item.quantidade} 
-                    ${item.categoria && item.categoria !== 'geral' ? ` | Categoria: ${item.categoria}` : ''}
+                    Qtd: ${item.quantidade}
                 </span>
             </div>
             <span class="item-price-display">${formatCurrency(item.preco * item.quantidade)}</span>
@@ -609,6 +609,44 @@ function updateCategoryButtonText(category) {
     btn.innerHTML = `<i class="fas fa-tag"></i> Categoria: ${categoryName}`;
 }
 
+// Mapeamento de palavras-chave para categorias automáticas
+const categoriaPorPalavra = [
+    { palavras: ["maçã", "banana", "laranja", "pera", "uva", "abacaxi", "fruta", "melancia", "mamão", "limão", "morango"], categoria: "hortifruti" },
+    { palavras: ["alface", "tomate", "cenoura", "batata", "cebola", "alho", "verdura", "legume", "pepino", "abobrinha", "chuchu"], categoria: "hortifruti" },
+    { palavras: ["arroz", "feijão", "macarrão", "massa", "farinha", "açúcar", "sal", "óleo", "trigo", "milho"], categoria: "alimentos" },
+    { palavras: ["leite", "queijo", "manteiga", "requeijão", "iogurte", "laticínio", "creme de leite", "nata"], categoria: "laticinios" },
+    { palavras: ["pão", "broa", "bolo", "croissant", "padaria", "rosca"], categoria: "padaria" },
+    { palavras: ["carne", "frango", "bife", "peixe", "porco", "linguiça", "salsicha", "presunto", "mortadela", "bacon"], categoria: "carnes" },
+    { palavras: ["cerveja", "refrigerante", "suco", "vinho", "água", "bebida", "whisky", "vodka", "cachaça"], categoria: "bebidas" },
+    { palavras: ["sabão", "detergente", "desinfetante", "limpeza", "amaciante", "esponja", "cloro", "alvejante", "multiuso"], categoria: "limpeza" },
+    { palavras: ["shampoo", "sabonete", "pasta de dente", "escova", "fio dental", "higiene", "absorvente", "desodorante", "papel higiênico"], categoria: "higiene" },
+    { palavras: ["pizza", "lasanha", "sorvete", "congelado", "hamburguer", "nuggets"], categoria: "congelados" },
+    { palavras: ["vassoura", "balde", "pano", "rodo", "casa", "lampada", "pregos", "parafuso", "ferramenta"], categoria: "casa" },
+];
+
+function detectarCategoriaAutomatica(nomeItem) {
+    const nome = nomeItem.toLowerCase();
+    for (const grupo of categoriaPorPalavra) {
+        for (const palavra of grupo.palavras) {
+            if (nome.includes(palavra)) {
+                return grupo.categoria;
+            }
+        }
+    }
+    return "geral";
+}
+
+// Atualiza categoria automaticamente ao digitar o nome do item
+if (elements.itemName && elements.itemCategory) {
+    elements.itemName.addEventListener('input', function () {
+        const nome = elements.itemName.value;
+        const categoriaDetectada = detectarCategoriaAutomatica(nome);
+        elements.itemCategory.value = categoriaDetectada;
+        selectedCategory = categoriaDetectada;
+        updateCategoryButtonText && updateCategoryButtonText(categoriaDetectada);
+    });
+}
+
 // Event Listeners
 document.addEventListener('DOMContentLoaded', async () => {
     // Inicializa carregando as listas do usuário e mostrando a tela de seleção
@@ -652,26 +690,28 @@ document.addEventListener('DOMContentLoaded', async () => {
         e.preventDefault();
         const name = elements.itemName.value.trim();
         const quantity = parseInt(elements.itemQuantity.value);
-        const price = parseFloat(elements.itemPrice.value) || 0; // Se vazio, default para 0
+        const price = parseFloat(elements.itemPrice.value) || 0;
 
         if (!name || quantity <= 0) {
             showNotification('Por favor, preencha o nome e uma quantidade válida.', 'warning');
             return;
         }
 
+        // Sempre detecta a categoria automaticamente
+        const categoriaDetectada = detectarCategoriaAutomatica(name);
+        selectedCategory = categoriaDetectada;
+
         if (editingItem) {
-            // Atualizar item existente
             await updateItem(editingItem.id, {
                 nome: name,
                 quantidade: quantity,
                 preco: price,
                 categoria: selectedCategory
             });
-            editingItem = null; // Reseta o estado de edição
+            editingItem = null;
             elements.addItemBtn.textContent = 'Adicionar';
             elements.addItemBtn.classList.remove('btn-warning');
         } else {
-            // Adicionar novo item
             await addItem({
                 nome: name,
                 quantidade: quantity,
@@ -685,8 +725,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         elements.itemName.value = '';
         elements.itemQuantity.value = '1';
         elements.itemPrice.value = '';
-        selectedCategory = 'geral'; // Reseta a categoria selecionada
-        updateCategoryButtonText(selectedCategory); // Atualiza o texto do botão de categoria
+        selectedCategory = 'geral';
+        updateCategoryButtonText(selectedCategory);
         elements.itemName.focus();
     });
 
