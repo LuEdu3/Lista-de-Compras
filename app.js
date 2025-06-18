@@ -3,25 +3,23 @@ const express = require('express');
 const path = require('path');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const mysql = require('mysql2');
+const { Pool } = require('pg');
+require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Conexão com o banco de dados MySQL
-const connection = mysql.createConnection({
-    host: 'localhost',
-    user: 'LuizEduardo', // Seu usuário do MySQL
-    password: '1122', // Sua senha do MySQL
-    database: 'lista_de_compras'
+// Conexão com o banco de dados PostgreSQL (Neon)
+const connection = new Pool({
+    connectionString: process.env.DATABASE_URL // Defina essa variável no ambiente
 });
 
 connection.connect((err) => {
     if (err) {
-        console.error('Erro ao conectar ao MySQL:', err.stack);
+        console.error('Erro ao conectar ao PostgreSQL:', err.stack);
         return;
     }
-    console.log('Conectado ao MySQL como id ' + connection.threadId);
+    console.log('Conectado ao PostgreSQL!');
 });
 
 // Middleware
@@ -34,209 +32,210 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// Função utilitária para adaptar resultados do pg para o formato esperado
+function adaptPgResult(result) {
+    if (Array.isArray(result.rows)) return result.rows;
+    return result;
+}
+
 // API Routes
 
 // Obter todas as listas
-app.get('/api/listas', (req, res) => {
-    connection.query('SELECT * FROM listas ORDER BY nome ASC', (err, results) => {
-        if (err) {
-            console.error('Erro ao buscar listas:', err);
-            return res.status(500).json({ success: false, message: 'Erro ao buscar listas', error: err });
-        }
-        res.json({ success: true, data: results });
-    });
+app.get('/api/listas', async (req, res) => {
+    try {
+        const result = await connection.query('SELECT * FROM listas ORDER BY nome ASC');
+        res.json({ success: true, data: adaptPgResult(result) });
+    } catch (err) {
+        console.error('Erro ao buscar listas:', err);
+        res.status(500).json({ success: false, message: 'Erro ao buscar listas', error: err });
+    }
 });
 
 // Criar nova lista
-app.post('/api/listas', (req, res) => {
+app.post('/api/listas', async (req, res) => {
     const { name } = req.body;
     if (!name) {
         return res.status(400).json({ success: false, message: 'Nome da lista é obrigatório.' });
     }
-    connection.query('INSERT INTO listas (nome) VALUES (?)', [name], (err, result) => {
-        if (err) {
-            console.error('Erro ao criar lista:', err);
-            return res.status(500).json({ success: false, message: 'Erro ao criar lista', error: err });
-        }
-        res.status(201).json({ success: true, message: 'Lista criada com sucesso!', listId: result.insertId });
-    });
+    try {
+        const result = await connection.query('INSERT INTO listas (nome) VALUES ($1) RETURNING id', [name]);
+        res.status(201).json({ success: true, message: 'Lista criada com sucesso!', listId: result.rows[0].id });
+    } catch (err) {
+        console.error('Erro ao criar lista:', err);
+        res.status(500).json({ success: false, message: 'Erro ao criar lista', error: err });
+    }
 });
 
 // Renomear lista
-app.put('/api/listas/:id', (req, res) => {
+app.put('/api/listas/:id', async (req, res) => {
     const { id } = req.params;
     const { name } = req.body;
     if (!name) {
         return res.status(400).json({ success: false, message: 'Novo nome da lista é obrigatório.' });
     }
-    connection.query('UPDATE listas SET nome = ? WHERE id = ?', [name, id], (err, result) => {
-        if (err) {
-            console.error('Erro ao renomear lista:', err);
-            return res.status(500).json({ success: false, message: 'Erro ao renomear lista', error: err });
-        }
-        if (result.affectedRows === 0) {
+    try {
+        const result = await connection.query('UPDATE listas SET nome = $1 WHERE id = $2', [name, id]);
+        if (result.rowCount === 0) {
             return res.status(404).json({ success: false, message: 'Lista não encontrada.' });
         }
         res.json({ success: true, message: 'Lista renomeada com sucesso.' });
-    });
+    } catch (err) {
+        console.error('Erro ao renomear lista:', err);
+        res.status(500).json({ success: false, message: 'Erro ao renomear lista', error: err });
+    }
 });
 
 // Excluir lista (e seus itens via CASCADE)
-app.delete('/api/listas/:id', (req, res) => {
+app.delete('/api/listas/:id', async (req, res) => {
     const { id } = req.params;
-    connection.query('DELETE FROM listas WHERE id = ?', [id], (err, result) => {
-        if (err) {
-            console.error('Erro ao excluir lista:', err);
-            return res.status(500).json({ success: false, message: 'Erro ao excluir lista', error: err });
-        }
-        if (result.affectedRows === 0) {
+    try {
+        const result = await connection.query('DELETE FROM listas WHERE id = $1', [id]);
+        if (result.rowCount === 0) {
             return res.status(404).json({ success: false, message: 'Lista não encontrada.' });
         }
-        res.json({ success: true, message: 'Lista excluída com sucesso.', deletedRows: result.affectedRows });
-    });
+        res.json({ success: true, message: 'Lista excluída com sucesso.', deletedRows: result.rowCount });
+    } catch (err) {
+        console.error('Erro ao excluir lista:', err);
+        res.status(500).json({ success: false, message: 'Erro ao excluir lista', error: err });
+    }
 });
 
 // Obter itens de uma lista específica
-app.get('/api/listas/:listaId/itens', (req, res) => {
+app.get('/api/listas/:listaId/itens', async (req, res) => {
     const { listaId } = req.params;
-    connection.query('SELECT * FROM itens WHERE lista_id = ? ORDER BY id DESC', [listaId], (err, results) => {
-        if (err) {
-            console.error('Erro ao buscar itens da lista:', err);
-            return res.status(500).json({ success: false, message: 'Erro ao buscar itens da lista', error: err });
-        }
-        res.json({ success: true, data: results });
-    });
+    try {
+        const result = await connection.query('SELECT * FROM itens WHERE lista_id = $1 ORDER BY id DESC', [listaId]);
+        res.json({ success: true, data: adaptPgResult(result) });
+    } catch (err) {
+        console.error('Erro ao buscar itens da lista:', err);
+        res.status(500).json({ success: false, message: 'Erro ao buscar itens da lista', error: err });
+    }
 });
 
 // Adicionar item a uma lista
-app.post('/api/listas/:listaId/itens', (req, res) => {
+app.post('/api/listas/:listaId/itens', async (req, res) => {
     const { listaId } = req.params;
     const { nome, quantidade, preco, categoria, concluido } = req.body;
     if (!nome) {
         return res.status(400).json({ success: false, message: 'Nome do item é obrigatório.' });
     }
-    connection.query(
-        'INSERT INTO itens (lista_id, nome, quantidade, preco, categoria, concluido) VALUES (?, ?, ?, ?, ?, ?)',
-        [listaId, nome, quantidade || 1, preco || 0, categoria || 'geral', concluido || false],
-        (err, result) => {
-            if (err) {
-                console.error('Erro ao adicionar item:', err);
-                return res.status(500).json({ success: false, message: 'Erro ao adicionar item', error: err });
-            }
-            // Salva palavra aprendida ao adicionar item
-            if (categoria && nome) {
-                connection.query(
-                    'INSERT INTO palavras_aprendidas (palavra, categoria) VALUES (?, ?) ON DUPLICATE KEY UPDATE categoria = VALUES(categoria)',
-                    [nome.toLowerCase().trim(), categoria],
-                    (err) => {
-                        if (err) {
-                            console.error('Erro ao salvar palavra aprendida:', err);
-                        }
-                    }
-                );
-            }
-            res.status(201).json({ success: true, message: 'Item adicionado com sucesso!', itemId: result.insertId });
+    try {
+        const result = await connection.query(
+            'INSERT INTO itens (lista_id, nome, quantidade, preco, categoria, concluido) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
+            [listaId, nome, quantidade || 1, preco || 0, categoria || 'geral', concluido || false]
+        );
+        // Salva palavra aprendida ao adicionar item
+        if (categoria && nome) {
+            await connection.query(
+                `INSERT INTO palavras_aprendidas (palavra, categoria)
+                 VALUES ($1, $2)
+                 ON CONFLICT (palavra) DO UPDATE SET categoria = EXCLUDED.categoria`,
+                [nome.toLowerCase().trim(), categoria]
+            );
         }
-    );
+        res.status(201).json({ success: true, message: 'Item adicionado com sucesso!', itemId: result.rows[0].id });
+    } catch (err) {
+        console.error('Erro ao adicionar item:', err);
+        res.status(500).json({ success: false, message: 'Erro ao adicionar item', error: err });
+    }
 });
 
 // Atualizar item
-app.put('/api/itens/:id', (req, res) => {
+app.put('/api/itens/:id', async (req, res) => {
     const { id } = req.params;
     const { nome, quantidade, preco, categoria, concluido } = req.body;
-    const updates = {};
-    if (nome !== undefined) updates.nome = nome;
-    if (quantidade !== undefined) updates.quantidade = quantidade;
-    if (preco !== undefined) updates.preco = preco;
-    if (categoria !== undefined) updates.categoria = categoria;
-    if (concluido !== undefined) updates.concluido = concluido;
-
-    if (Object.keys(updates).length === 0) {
+    const updates = [];
+    const values = [];
+    let idx = 1;
+    if (nome !== undefined) { updates.push(`nome = $${idx++}`); values.push(nome); }
+    if (quantidade !== undefined) { updates.push(`quantidade = $${idx++}`); values.push(quantidade); }
+    if (preco !== undefined) { updates.push(`preco = $${idx++}`); values.push(preco); }
+    if (categoria !== undefined) { updates.push(`categoria = $${idx++}`); values.push(categoria); }
+    if (concluido !== undefined) { updates.push(`concluido = $${idx++}`); values.push(concluido); }
+    if (updates.length === 0) {
         return res.status(400).json({ success: false, message: 'Nenhum campo para atualizar.' });
     }
-
-    const query = 'UPDATE itens SET ? WHERE id = ?';
-    connection.query(query, [updates, id], (err, result) => {
-        if (err) {
-            console.error('Erro ao atualizar item:', err);
-            return res.status(500).json({ success: false, message: 'Erro ao atualizar item', error: err });
-        }
-        if (result.affectedRows === 0) {
+    values.push(id);
+    try {
+        const result = await connection.query(
+            `UPDATE itens SET ${updates.join(', ')} WHERE id = $${idx}`,
+            values
+        );
+        if (result.rowCount === 0) {
             return res.status(404).json({ success: false, message: 'Item não encontrado.' });
         }
         // Salva palavra aprendida ao atualizar item
         if (categoria && nome) {
-            connection.query(
-                'INSERT INTO palavras_aprendidas (palavra, categoria) VALUES (?, ?) ON DUPLICATE KEY UPDATE categoria = VALUES(categoria)',
-                [nome.toLowerCase().trim(), categoria],
-                (err) => {
-                    if (err) {
-                        console.error('Erro ao salvar palavra aprendida:', err);
-                    }
-                }
+            await connection.query(
+                `INSERT INTO palavras_aprendidas (palavra, categoria)
+                 VALUES ($1, $2)
+                 ON CONFLICT (palavra) DO UPDATE SET categoria = EXCLUDED.categoria`,
+                [nome.toLowerCase().trim(), categoria]
             );
         }
         res.json({ success: true, message: 'Item atualizado com sucesso.' });
-    });
+    } catch (err) {
+        console.error('Erro ao atualizar item:', err);
+        res.status(500).json({ success: false, message: 'Erro ao atualizar item', error: err });
+    }
 });
 
 // Excluir item
-app.delete('/api/itens/:id', (req, res) => {
+app.delete('/api/itens/:id', async (req, res) => {
     const { id } = req.params;
-    connection.query('DELETE FROM itens WHERE id = ?', [id], (err, result) => {
-        if (err) {
-            console.error('Erro ao excluir item:', err);
-            return res.status(500).json({ success: false, message: 'Erro ao excluir item', error: err });
-        }
-        if (result.affectedRows === 0) {
+    try {
+        const result = await connection.query('DELETE FROM itens WHERE id = $1', [id]);
+        if (result.rowCount === 0) {
             return res.status(404).json({ success: false, message: 'Item não encontrado.' });
         }
         res.json({ success: true, message: 'Item excluído com sucesso.' });
-    });
+    } catch (err) {
+        console.error('Erro ao excluir item:', err);
+        res.status(500).json({ success: false, message: 'Erro ao excluir item', error: err });
+    }
 });
 
 // Limpar itens concluídos de uma lista
-app.delete('/api/listas/:listaId/itens/concluidos', (req, res) => {
+app.delete('/api/listas/:listaId/itens/concluidos', async (req, res) => {
     const { listaId } = req.params;
-    connection.query('DELETE FROM itens WHERE lista_id = ? AND concluido = TRUE', [listaId], (err, result) => {
-        if (err) {
-            console.error('Erro ao limpar itens concluídos:', err);
-            return res.status(500).json({ success: false, message: 'Erro ao limpar itens concluídos', error: err });
-        }
-        res.json({ success: true, message: 'Itens concluídos removidos.', removedCount: result.affectedRows });
-    });
+    try {
+        const result = await connection.query('DELETE FROM itens WHERE lista_id = $1 AND concluido = TRUE', [listaId]);
+        res.json({ success: true, message: 'Itens concluídos removidos.', removedCount: result.rowCount });
+    } catch (err) {
+        console.error('Erro ao limpar itens concluídos:', err);
+        res.status(500).json({ success: false, message: 'Erro ao limpar itens concluídos', error: err });
+    }
 });
 
 // Limpar todos os itens de uma lista
-app.delete('/api/listas/:listaId/itens', (req, res) => {
+app.delete('/api/listas/:listaId/itens', async (req, res) => {
     const { listaId } = req.params;
-    connection.query('DELETE FROM itens WHERE lista_id=?', [listaId], (err, result) => {
-        if (err) {
-            console.error('Erro ao limpar lista (todos os itens):', err);
-            return res.status(500).json({ success: false, message: 'Erro ao limpar lista', error: err });
-        }
-        res.json({ success: true, message: 'Lista limpa com sucesso', removedCount: result.affectedRows });
-    });
+    try {
+        const result = await connection.query('DELETE FROM itens WHERE lista_id = $1', [listaId]);
+        res.json({ success: true, message: 'Lista limpa com sucesso', removedCount: result.rowCount });
+    } catch (err) {
+        console.error('Erro ao limpar lista (todos os itens):', err);
+        res.status(500).json({ success: false, message: 'Erro ao limpar lista', error: err });
+    }
 });
 
 // Endpoint para buscar categoria aprendida de uma palavra
-app.get('/api/categoria-aprendida/:palavra', (req, res) => {
+app.get('/api/categoria-aprendida/:palavra', async (req, res) => {
     const palavra = req.params.palavra.toLowerCase().trim();
-    connection.query(
-        'SELECT categoria FROM palavras_aprendidas WHERE palavra = ? LIMIT 1',
-        [palavra],
-        (err, results) => {
-            if (err) {
-                console.error('Erro ao buscar categoria aprendida:', err);
-                return res.status(500).json({ success: false, message: 'Erro ao buscar categoria aprendida', error: err });
-            }
-            if (results.length > 0) {
-                res.json({ success: true, categoria: results[0].categoria });
-            } else {
-                res.json({ success: false, categoria: null });
-            }
+    try {
+        const result = await connection.query(
+            'SELECT categoria FROM palavras_aprendidas WHERE palavra = $1 LIMIT 1',
+            [palavra]
+        );
+        if (result.rows.length > 0) {
+            res.json({ success: true, categoria: result.rows[0].categoria });
+        } else {
+            res.json({ success: false, categoria: null });
         }
-    );
+    } catch (err) {
+        console.error('Erro ao buscar categoria aprendida:', err);
+        res.status(500).json({ success: false, message: 'Erro ao buscar categoria aprendida', error: err });
+    }
 });
 
 // Middleware de tratamento de erros
