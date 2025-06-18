@@ -70,11 +70,22 @@
                     <input type="text" id="itemName" placeholder="Nome do item" required>
                     <input type="number" id="itemQuantity" placeholder="Qtd" value="1" min="1">
                     <input type="number" id="itemPrice" placeholder="Preço (opcional)" step="0.01" min="0">
+                    <select id="itemCategory" required>
+                        <option value="geral">Geral</option>
+                        <option value="alimentos">Alimentos</option>
+                        <option value="limpeza">Limpeza</option>
+                        <option value="bebidas">Bebidas</option>
+                        <option value="higiene">Higiene</option>
+                        <option value="casa">Casa</option>
+                        <option value="congelados">Congelados</option>
+                        <option value="laticinios">Laticínios</option>
+                        <option value="padaria">Padaria</option>
+                        <option value="carnes">Carnes</option>
+                        <option value="hortifruti">Hortifruti</option>
+                        <option value="outros">Outros</option>
+                    </select>
                 </div>
                 <div class="form-actions">
-                    <button type="button" id="openCategoryModalBtn" class="btn btn-secondary category-btn">
-                        <i class="fas fa-tag"></i> Categoria
-                    </button>
                     <button type="submit" class="btn btn-primary" id="addItemBtn">
                         <i class="fas fa-plus"></i> Adicionar
                     </button>
