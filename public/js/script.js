@@ -666,7 +666,7 @@ async function buscarCategoriaAprendida(nomeItem) {
 async function detectarCategoriaComAprendizado(nomeItem) {
     const aprendida = await buscarCategoriaAprendida(nomeItem);
     if (aprendida) return aprendida;
-    return detectarCategoriaAutomatica(nomeItem);
+    return detectarCategoriaAutomatica(nomeItem); // Usa a função existente para detecção automática
 }
 
 // Atualiza categoria automaticamente ao digitar o nome do item
