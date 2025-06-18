@@ -129,7 +129,7 @@ function updateListHeader(name) {
 // Funções de Persistência (API)
 async function fetchLists() {
     try {
-        const response = await fetch('/api/listas');
+        const response = await fetch(`/api/listas?deviceId=${encodeURIComponent(deviceId)}`);
         const data = await response.json();
         if (data.success) {
             userLists = data.data;
@@ -149,7 +149,7 @@ async function createList(name) {
         const response = await fetch('/api/listas', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name })
+            body: JSON.stringify({ name, deviceId }) // Envia o deviceId junto
         });
         const data = await response.json();
         if (data.success) {
@@ -397,6 +397,12 @@ async function updateListName(listId, newName) {
     }
 }
 
+// Identificação por dispositivo (UUID salvo no localStorage)
+let deviceId = localStorage.getItem('deviceId');
+if (!deviceId) {
+    deviceId = crypto.randomUUID();
+    localStorage.setItem('deviceId', deviceId);
+}
 
 // Abre uma lista de compras específica
 async function openShoppingList(listId, listName) {

@@ -2,7 +2,8 @@
 
 CREATE TABLE listas (
     id SERIAL PRIMARY KEY,
-    nome VARCHAR(100) NOT NULL
+    nome VARCHAR(100) NOT NULL,
+    device_id VARCHAR(50) NOT NULL
 );
 
 CREATE TABLE itens (

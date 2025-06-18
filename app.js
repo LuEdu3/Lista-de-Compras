@@ -40,10 +40,14 @@ function adaptPgResult(result) {
 
 // API Routes
 
-// Obter todas as listas
+// Obter todas as listas de um deviceId
 app.get('/api/listas', async (req, res) => {
+    const deviceId = req.query.deviceId || req.headers['deviceid'] || req.headers['device-id'];
+    if (!deviceId) {
+        return res.status(400).json({ success: false, message: 'deviceId é obrigatório.' });
+    }
     try {
-        const result = await connection.query('SELECT * FROM listas ORDER BY nome ASC');
+        const result = await connection.query('SELECT * FROM listas WHERE device_id = $1 ORDER BY nome ASC', [deviceId]);
         res.json({ success: true, data: adaptPgResult(result) });
     } catch (err) {
         console.error('Erro ao buscar listas:', err);
@@ -53,12 +57,12 @@ app.get('/api/listas', async (req, res) => {
 
 // Criar nova lista
 app.post('/api/listas', async (req, res) => {
-    const { name } = req.body;
-    if (!name) {
-        return res.status(400).json({ success: false, message: 'Nome da lista é obrigatório.' });
+    const { name, deviceId } = req.body;
+    if (!name || !deviceId) {
+        return res.status(400).json({ success: false, message: 'Nome da lista e deviceId são obrigatórios.' });
     }
     try {
-        const result = await connection.query('INSERT INTO listas (nome) VALUES ($1) RETURNING id', [name]);
+        const result = await connection.query('INSERT INTO listas (nome, device_id) VALUES ($1, $2) RETURNING id', [name, deviceId]);
         res.status(201).json({ success: true, message: 'Lista criada com sucesso!', listId: result.rows[0].id });
     } catch (err) {
         console.error('Erro ao criar lista:', err);
@@ -69,14 +73,14 @@ app.post('/api/listas', async (req, res) => {
 // Renomear lista
 app.put('/api/listas/:id', async (req, res) => {
     const { id } = req.params;
-    const { name } = req.body;
-    if (!name) {
-        return res.status(400).json({ success: false, message: 'Novo nome da lista é obrigatório.' });
+    const { name, deviceId } = req.body;
+    if (!name || !deviceId) {
+        return res.status(400).json({ success: false, message: 'Novo nome da lista e deviceId são obrigatórios.' });
     }
     try {
-        const result = await connection.query('UPDATE listas SET nome = $1 WHERE id = $2', [name, id]);
+        const result = await connection.query('UPDATE listas SET nome = $1 WHERE id = $2 AND device_id = $3', [name, id, deviceId]);
         if (result.rowCount === 0) {
-            return res.status(404).json({ success: false, message: 'Lista não encontrada.' });
+            return res.status(404).json({ success: false, message: 'Lista não encontrada ou deviceId incorreto.' });
         }
         res.json({ success: true, message: 'Lista renomeada com sucesso.' });
     } catch (err) {
@@ -88,10 +92,14 @@ app.put('/api/listas/:id', async (req, res) => {
 // Excluir lista (e seus itens via CASCADE)
 app.delete('/api/listas/:id', async (req, res) => {
     const { id } = req.params;
+    const { deviceId } = req.body;
+    if (!deviceId) {
+        return res.status(400).json({ success: false, message: 'deviceId é obrigatório.' });
+    }
     try {
-        const result = await connection.query('DELETE FROM listas WHERE id = $1', [id]);
+        const result = await connection.query('DELETE FROM listas WHERE id = $1 AND device_id = $2', [id, deviceId]);
         if (result.rowCount === 0) {
-            return res.status(404).json({ success: false, message: 'Lista não encontrada.' });
+            return res.status(404).json({ success: false, message: 'Lista não encontrada ou deviceId incorreto.' });
         }
         res.json({ success: true, message: 'Lista excluída com sucesso.', deletedRows: result.rowCount });
     } catch (err) {
