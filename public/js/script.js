@@ -149,7 +149,7 @@ async function createList(name) {
         const response = await fetch('/api/listas', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, deviceId }) // Envia o deviceId junto
+            body: JSON.stringify({ name, deviceId }) // Corrigido para enviar o nome correto
         });
         const data = await response.json();
         if (data.success) {
@@ -171,7 +171,9 @@ async function deleteList(listId) {
     }
     try {
         const response = await fetch(`/api/listas/${listId}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ deviceId }) // Corrigido para enviar o deviceId
         });
         const data = await response.json();
         if (data.success) {
@@ -377,7 +379,7 @@ async function updateListName(listId, newName) {
         const response = await fetch(`/api/listas/${listId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: newName })
+            body: JSON.stringify({ name: newName, deviceId }) // Corrigido para enviar o deviceId
         });
         const data = await response.json();
         if (data.success) {

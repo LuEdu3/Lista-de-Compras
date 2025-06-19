@@ -57,7 +57,7 @@ app.get('/api/listas', async (req, res) => {
 
 // Criar nova lista
 app.post('/api/listas', async (req, res) => {
-    const { name, deviceId } = req.body;
+    const { name, deviceId } = req.body || {};
     if (!name || !deviceId) {
         return res.status(400).json({ success: false, message: 'Nome da lista e deviceId são obrigatórios.' });
     }
@@ -73,7 +73,7 @@ app.post('/api/listas', async (req, res) => {
 // Renomear lista
 app.put('/api/listas/:id', async (req, res) => {
     const { id } = req.params;
-    const { name, deviceId } = req.body;
+    const { name, deviceId } = req.body || {};
     if (!name || !deviceId) {
         return res.status(400).json({ success: false, message: 'Novo nome da lista e deviceId são obrigatórios.' });
     }
@@ -92,7 +92,7 @@ app.put('/api/listas/:id', async (req, res) => {
 // Excluir lista (e seus itens via CASCADE)
 app.delete('/api/listas/:id', async (req, res) => {
     const { id } = req.params;
-    const { deviceId } = req.body;
+    const { deviceId } = req.body || {};
     if (!deviceId) {
         return res.status(400).json({ success: false, message: 'deviceId é obrigatório.' });
     }
