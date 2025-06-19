@@ -547,6 +547,11 @@ body {
     opacity: 0;
     min-width: 250px;
     max-width: 90vw;
+    transition: opacity 0.3s ease;
+}
+
+.notification.show {
+    opacity: 1;
 }
 
 .notification.success {

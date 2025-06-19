@@ -68,37 +68,32 @@ function showNotification(message, type = 'info') {
     `;
     elements.notificationContainer.appendChild(notification);
 
-    // DEBUG: Notificação criada
-    console.debug(`[DEBUG] Notificação (${type}):`, message);
-
-    setTimeout(() => notification.style.opacity = '1', 10);
+    // Força reflow para garantir a transição
+    void notification.offsetWidth;
+    notification.classList.add('show');
 
     notification.querySelector('.close-btn').addEventListener('click', () => {
-        // DEBUG: Notificação fechada manualmente
-        console.debug('[DEBUG] Notificação fechada manualmente:', message);
-        hideNotification(notification);
+        hideNotification(notification, true);
     });
 
     setTimeout(() => {
-        // DEBUG: Notificação fechada automaticamente
-        console.debug('[DEBUG] Notificação fechada automaticamente:', message);
         hideNotification(notification);
     }, 5000);
 }
 
-function hideNotification(notification) {
-    notification.style.opacity = '0';
-    let removed = false;
+function hideNotification(notification, immediate = false) {
+    if (immediate) {
+        notification.remove();
+        return;
+    }
+    notification.classList.remove('show');
     // Remove após a transição
     notification.addEventListener('transitionend', () => {
-        if (!removed) {
-            notification.remove();
-            removed = true;
-        }
+        notification.remove();
     }, { once: true });
     // Fallback: remove após 600ms caso a transição não dispare
     setTimeout(() => {
-        if (!removed && document.body.contains(notification)) {
+        if (document.body.contains(notification)) {
             notification.remove();
         }
     }, 600);
