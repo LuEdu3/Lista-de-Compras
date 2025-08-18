@@ -1,0 +1,49 @@
+# docker-compose.yml - Para executar app + banco
+
+version: '3.8'
+
+services:
+  # Aplicação Node.js
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://user:password@db:5432/lista_compras
+    depends_on:
+      - db
+    volumes:
+      - ./public:/app/public
+    restart: unless-stopped
+
+  # Banco PostgreSQL
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: lista_compras
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/banco_de_dados_neon.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+  # Redis para cache (opcional)
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+# Comandos úteis:
+# docker-compose up -d           # Subir todos os serviços
+# docker-compose down            # Parar todos os serviços
+# docker-compose logs app        # Ver logs da aplicação
+# docker-compose exec app sh     # Entrar no container da app
+# docker-compose exec db psql -U user -d lista_compras  # Acessar banco
