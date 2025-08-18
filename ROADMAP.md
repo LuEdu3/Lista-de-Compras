@@ -135,6 +135,13 @@ Observação: valores estimados com base no estado atual e nas melhorias listada
 
 ---
 
+## Conquistas recentes
+- Swipe refinado: ícones atrás do item e visíveis apenas quando ativados.
+- Edição por swipe (esquerda→direita) com foco automático e scroll de baixo para cima até o formulário.
+- Paridade inicial no desktop (mouse drag) espelhando o comportamento do touch.
+
+---
+
 ## Riscos e pontos de atenção
 - Confiabilidade de rede: melhorar resiliência a falhas de DB e latência (retries/backoff/timeout).
 - Consistência de UI/UX entre touch e mouse: alinhar comportamentos e thresholds.
@@ -152,13 +159,136 @@ Observação: valores estimados com base no estado atual e nas melhorias listada
 - [ ] Telemetria básica (logs estruturados) e rate-limiting
 - [ ] Melhorias de acessibilidade e performance (Lighthouse)
 
----
-
-## Como contribuir
-- Issues: priorize bugs e UX
-- PRs: pequenos, com descrição clara e, quando aplicável, passos de teste
-- Padrões: seguir lint/format (após configuração) e cobrir casos principais
-
----
+--- 
 
 Atualizado em: 2025-08-17 (swipe refinado: ícones só quando ativados; edição com foco + scroll para cima)
+
+---
+
+## Roadmap por fases (detalhado)
+
+Plano de evolução inspirado no roadmap da outra branch. Itens abaixo complementam o “Roadmap proposto” e podem ser executados fase a fase.
+
+### FASE 1: FUNDAÇÃO (Semanas 1–2)
+Preparar terreno para melhorias futuras.
+
+#### 1.1 Setup de Docker (Prioridade: alta | Esforço: baixo)
+- [ ] Criar Dockerfile (Node.js app)
+- [ ] Configurar docker-compose.yml (app + PostgreSQL)
+- [ ] Criar .dockerignore
+- [ ] Testar build e execução local
+- [ ] Documentar comandos no README
+
+Entregáveis:
+- Aplicação rodando em container; PostgreSQL containerizado; scripts de execução
+
+Critérios de sucesso:
+- `docker-compose up` sobe todo o stack; dados persistem entre restarts; sem perda de performance
+
+#### 1.2 Organização do Código (Prioridade: alta | Esforço: baixo)
+- [ ] Separar rotas/controladores (controllers/)
+- [ ] Middlewares dedicados (middlewares/)
+- [ ] Camadas de banco/serviços (models/ ou services/)
+- [ ] Estrutura de pastas padronizada
+- [ ] Adicionar .env.example
+
+Estrutura sugerida:
+```
+src/
+├─ controllers/     # Lógica das rotas
+├─ middlewares/     # Middlewares customizados
+├─ models/          # Acesso ao banco
+├─ services/        # Regras de negócio
+├─ utils/           # Utilitários
+└─ app.js           # Entry point
+```
+
+### FASE 2: QUALIDADE (Semanas 3–4)
+Implementar testes e garantir estabilidade.
+
+#### 2.1 Setup de Testes (Prioridade: alta | Esforço: médio)
+- [ ] Instalar e configurar Jest + Supertest
+- [ ] Ambiente de teste e banco dedicado
+- [ ] CI básico (GitHub Actions) e coverage
+
+Sugestão de devDependencies:
+```json
+{
+  "devDependencies": {
+    "jest": "^29.0.0",
+    "supertest": "^6.3.0",
+    "@types/jest": "^29.0.0"
+  }
+}
+```
+
+#### 2.2 Testes da API (Prioridade: alta | Esforço: médio)
+- [ ] Unit: utils
+- [ ] Integração: endpoints
+- [ ] E2E: fluxos principais
+
+Endpoints prioritários:
+1. POST /api/listas
+2. GET /api/listas
+3. POST /api/listas/:id/itens
+4. PUT /api/itens/:id
+5. DELETE /api/itens/:id
+
+Meta: 80%+ de cobertura
+
+### FASE 3: MODERNIZAÇÃO (Semanas 5–8)
+Adicionar TypeScript e melhorar DX.
+
+#### 3.1 Migração para TypeScript (Prioridade: média | Esforço: alto)
+Estratégia gradual por camadas:
+1) Setup e configuração; 2) models/interfaces; 3) controllers/services; 4) testes e refinamentos
+
+Tarefas:
+- [ ] TypeScript + ts-node
+- [ ] tsconfig.json
+- [ ] Interfaces (ShoppingItem, ShoppingList, etc.)
+- [ ] Migração incremental
+- [ ] Atualizar testes
+- [ ] Processo de build
+
+#### 3.2 Melhoria da API (Prioridade: média | Esforço: baixo)
+- [ ] Validação com Joi/Zod
+- [ ] Rate limiting
+- [ ] Tratamento de erros padronizado
+- [ ] Logs estruturados (Winston/Pino)
+- [ ] Health check endpoint
+
+Novos endpoints:
+Atualizado em: 2025-08-17 (inclui conquistas recentes do swipe/edição)
+- GET /api/stats (estatísticas)
+
+
+## Roadmap por fases (resumo)
+
+Resumo executivo das fases, sem duplicar o “Roadmap proposto”. Detalhes técnicos (linters, testes, CI, validações, observabilidade) permanecem centralizados nas seções acima.
+
+- Fase 1 — Fundação (Semanas 1–2)
+  - Dockerfile + docker-compose (app + Postgres), .dockerignore e documentação de execução.
+  - Organização do código por camadas (controllers, middlewares, services/models, utils) e .env.example.
+
+- Fase 2 — Qualidade (Semanas 3–4)
+  - Setup de testes (Jest + Supertest), banco de teste e CI básico com coverage.
+  - Cobrir endpoints principais (listas/itens) e 80%+ de cobertura como meta.
+
+- Fase 3 — Modernização (Semanas 5–8)
+  - Migração gradual para TypeScript (interfaces, models, services, controllers, testes).
+  - API hardening: validação, rate-limit, erros padronizados, logs e health check.
+
+- Fase 4 — Frontend Moderno (Semanas 9–12, opcional)
+  - Decidir entre modularizar JS atual (possível TS) ou migrar para React.
+
+- Fase 5 — Deploy e Monitoramento (Semanas 13–16)
+  - Infra, HTTPS, domínio, backups e monitoramento; pipeline CI/CD com deploy automático.
+
+Milestones
+- M1 (semana 2): Docker + organização do código.
+- M2 (semana 4): Testes + CI básicos; coverage-alvo.
+- M3 (semana 8): TS + API melhorada.
+- M4 (semana 12): UX refinada.
+- M5 (semana 16): Produção pronta + monitoramento.
+
