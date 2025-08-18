@@ -22,7 +22,7 @@ const elements = {
     summaryTotal: document.getElementById('summaryTotal'),
     clearCompleted: document.getElementById('clearCompleted'),
     clearAll: document.getElementById('clearAll'),
-    categoryBtns: document.querySelectorAll('.category-btn'),    categoryModal: document.getElementById('categoryModal'),
+    categoryBtns: document.querySelectorAll('.category-btn'), categoryModal: document.getElementById('categoryModal'),
     closeCategoryModal: document.getElementById('closeCategoryModal'),
     categoryOptions: document.querySelectorAll('.category-option'),
     openCategoryModalBtn: document.getElementById('openCategoryModalBtn'),
@@ -439,77 +439,120 @@ function renderShoppingList() {
         li.dataset.id = item.id;
         li.dataset.category = item.categoria || 'geral';
 
+        // Adiciona área para lixeira e edição (apenas visíveis no swipe)
         li.innerHTML = `
-            <div class="item-actions left">
-                <button class="edit-btn" data-id="${item.id}">
-                    <i class="fas fa-edit"></i>
-                </button>
-            </div>
-            <input type="checkbox" class="item-checkbox" ${item.concluido ? 'checked' : ''} data-id="${item.id}">
-            <div class="item-info">
-                <span class="item-name">${item.nome}</span>
-                <span class="item-category-label">${item.categoria ? item.categoria.charAt(0).toUpperCase() + item.categoria.slice(1) : 'Geral'}</span>
-                <span class="item-details">
-                    Qtd: ${item.quantidade}
-                </span>
-            </div>
-            <span class="item-price-display">${formatCurrency(item.preco * item.quantidade)}</span>
-            <div class="item-actions right">
-                <button class="delete-btn" data-id="${item.id}">
-                    <i class="fas fa-trash-alt"></i>
-                </button>
-            </div>
-        `;
+    <div class="item-content">
+        <input type="checkbox" class="item-checkbox" ${item.concluido ? 'checked' : ''} data-id="${item.id}">
+        <div class="item-info">
+            <span class="item-name">${item.nome}</span>
+            <span class="item-category-label">${item.categoria ? item.categoria.charAt(0).toUpperCase() + item.categoria.slice(1) : 'Geral'}</span>
+            <span class="item-details">Qtd: ${item.quantidade}</span>
+        </div>
+        <span class="item-price-display">${formatCurrency(item.preco * item.quantidade)}</span>
+    </div>
+    <div class="swipe-trash"><i class="fas fa-trash-alt"></i></div>
+    <div class="swipe-edit"><i class="fas fa-edit"></i></div>
+`;
+
 
         elements.shoppingList.appendChild(li);
 
-        // Adicionar eventos de swipe (touch) para editar/deletar
-        let startX;
-        let deltaX;
-        let isSwiping = false;
-
-        // Touch events com passive: true
+        // Swipe touch
+        let startX, deltaX, isSwiping = false;
         li.addEventListener('touchstart', (e) => {
             startX = e.touches[0].clientX;
             deltaX = 0;
             isSwiping = false;
-            li.style.transition = 'none';
+            // move apenas o conteúdo
+            li.querySelector('.item-content').style.transition = 'none';
         }, { passive: true });
         li.addEventListener('touchmove', (e) => {
             deltaX = e.touches[0].clientX - startX;
-            if (Math.abs(deltaX) > 20) {
+            const content = li.querySelector('.item-content');
+            if (deltaX < -40) {
+                // direita -> esquerda (mostrar lixeira)
                 isSwiping = true;
-                li.style.transform = `translateX(${deltaX}px)`;
+                content.style.transform = `translateX(${deltaX}px)`;
+                if (deltaX > -120) {
+                    li.classList.add('show-trash');
+                    li.classList.remove('show-edit');
+                } else {
+                    // passando limiar de exclusão total
+                    li.classList.remove('show-edit');
+                }
+            } else if (deltaX > 40) {
+                // esquerda -> direita (mostrar editar)
+                isSwiping = true;
+                content.style.transform = `translateX(${deltaX}px)`;
+                if (deltaX < 120) {
+                    li.classList.add('show-edit');
+                    li.classList.remove('show-trash');
+                } else {
+                    // passando limiar de edição total
+                    li.classList.remove('show-trash');
+                }
             }
         }, { passive: true });
-        li.addEventListener('touchend', () => {
-            li.style.transition = 'transform 0.2s ease-out'; // Reabilita a transição
+        li.addEventListener('touchend', async () => {
+            const content = li.querySelector('.item-content');
+            content.style.transition = 'transform 0.2s ease-out';
             if (isSwiping) {
-                if (deltaX < -60) { // Deslizou para a esquerda (revelar delete)
-                    li.classList.add('swipe-left');
-                    li.classList.remove('swipe-right');
-                    li.style.transform = `translateX(-80px)`; // Ajustar para o tamanho do botão
-                } else if (deltaX > 60) { // Deslizou para a direita (revelar edit)
-                    li.classList.add('swipe-right');
-                    li.classList.remove('swipe-left');
-                    li.style.transform = `translateX(80px)`; // Ajustar para o tamanho do botão
+                if (deltaX <= -120) {
+                    // deslize completo p/ esquerda: excluir (sem confirm) com desfazer
+                    const itemId = parseInt(li.dataset.id);
+                    await deleteItemWithUndo(itemId, item);
+                } else if (deltaX < -40) {
+                    // manter parcialmente aberto mostrando lixeira
+                    li.classList.add('show-trash');
+                    content.style.transform = 'translateX(-80px)';
+                } else if (deltaX >= 120) {
+                    // deslize completo p/ direita: entrar em modo edição e focar no campo
+                    const itemId = parseInt(li.dataset.id);
+                    const itemToEdit = shoppingList.find(i => i.id === itemId);
+                    if (itemToEdit) {
+                        editingItem = itemToEdit;
+                        elements.itemName.value = itemToEdit.nome;
+                        elements.itemQuantity.value = itemToEdit.quantidade;
+                        elements.itemPrice.value = itemToEdit.preco;
+                        selectedCategory = itemToEdit.categoria || 'geral';
+                        updateCategoryButtonText(selectedCategory);
+                        // Ajusta botão para estado de edição
+                        if (!elements.addItemBtn) {
+                            // cria referência rápida ao botão (caso não exista no cache)
+                            elements.addItemBtn = document.querySelector('#addItemForm button[type="submit"]');
+                        }
+                        if (elements.addItemBtn) {
+                            elements.addItemBtn.textContent = 'Salvar Edição';
+                            elements.addItemBtn.classList.add('btn-warning');
+                        }
+                        showNotification('Editando item...', 'info');
+                        // Foca no campo e faz scroll de baixo para cima (container principal)
+                        setTimeout(() => {
+                            elements.itemName.focus({ preventScroll: true });
+                            const scroller = elements.mainScreen;
+                            if (scroller && typeof scroller.scrollTo === 'function') {
+                                scroller.scrollTo({ top: 0, behavior: 'smooth' });
+                            } else {
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }
+                        }, 50);
+                    }
+                    li.classList.remove('show-edit');
+                    content.style.transform = 'translateX(0)';
+                } else if (deltaX > 40) {
+                    // manter parcialmente aberto mostrando editar
+                    li.classList.add('show-edit');
+                    content.style.transform = 'translateX(80px)';
                 } else {
-                    li.classList.remove('swipe-left', 'swipe-right');
-                    li.style.transform = `translateX(0)`;
+                    li.classList.remove('show-trash', 'show-edit');
+                    content.style.transform = 'translateX(0)';
                 }
             }
             isSwiping = false;
+            setTimeout(() => {
+                content.style.transition = '';
+            }, 250);
         });
-
-        // Evento para fechar swipe ao clicar fora do item
-        li.addEventListener('click', (e) => {
-            if (!e.target.closest('.item-actions')) {
-                // Se o clique não foi nos botões de ação, feche o swipe
-                li.classList.remove('swipe-left', 'swipe-right');
-                li.style.transform = `translateX(0)`;
-            }
-        });
-
 
         // Eventos para desktop (mouse) para um efeito similar de swipe
         let mouseDownX;
@@ -517,84 +560,149 @@ function renderShoppingList() {
         let isMouseDown = false;
 
         li.addEventListener('mousedown', (e) => {
-            if (e.button === 0) { // Botão esquerdo do mouse
+            if (e.button === 0) {
                 mouseDownX = e.clientX;
                 mouseDeltaX = 0;
                 isMouseDown = true;
-                li.style.transition = 'none';
+                li.querySelector('.item-content').style.transition = 'none';
             }
         });
 
         li.addEventListener('mousemove', (e) => {
             if (isMouseDown) {
                 mouseDeltaX = e.clientX - mouseDownX;
+                const content = li.querySelector('.item-content');
                 if (Math.abs(mouseDeltaX) > 10) {
-                    li.style.transform = `translateX(${mouseDeltaX}px)`;
+                    content.style.transform = `translateX(${mouseDeltaX}px)`;
+                    if (mouseDeltaX < -40) {
+                        li.classList.add('show-trash');
+                        li.classList.remove('show-edit');
+                    } else if (mouseDeltaX > 40) {
+                        li.classList.add('show-edit');
+                        li.classList.remove('show-trash');
+                    }
                 }
             }
         });
 
-        li.addEventListener('mouseup', () => {
+        li.addEventListener('mouseup', async () => {
             if (isMouseDown) {
-                li.style.transition = 'transform 0.2s ease-out';
-                if (mouseDeltaX < -60) {
-                    li.classList.add('swipe-left');
-                    li.classList.remove('swipe-right');
-                    li.style.transform = `translateX(-80px)`;
-                } else if (mouseDeltaX > 60) {
-                    li.classList.add('swipe-right');
-                    li.classList.remove('swipe-left');
-                    li.style.transform = `translateX(80px)`;
+                const content = li.querySelector('.item-content');
+                content.style.transition = 'transform 0.2s ease-out';
+                if (mouseDeltaX <= -120) {
+                    const itemId = parseInt(li.dataset.id);
+                    await deleteItemWithUndo(itemId, item);
+                } else if (mouseDeltaX < -40) {
+                    li.classList.add('show-trash');
+                    content.style.transform = 'translateX(-80px)';
+                } else if (mouseDeltaX >= 120) {
+                    const itemId = parseInt(li.dataset.id);
+                    const itemToEdit = shoppingList.find(i => i.id === itemId);
+                    if (itemToEdit) {
+                        editingItem = itemToEdit;
+                        elements.itemName.value = itemToEdit.nome;
+                        elements.itemQuantity.value = itemToEdit.quantidade;
+                        elements.itemPrice.value = itemToEdit.preco;
+                        selectedCategory = itemToEdit.categoria || 'geral';
+                        updateCategoryButtonText(selectedCategory);
+                        if (!elements.addItemBtn) {
+                            elements.addItemBtn = document.querySelector('#addItemForm button[type="submit"]');
+                        }
+                        if (elements.addItemBtn) {
+                            elements.addItemBtn.textContent = 'Salvar Edição';
+                            elements.addItemBtn.classList.add('btn-warning');
+                        }
+                        showNotification('Editando item...', 'info');
+                        // Foca no campo e faz scroll de baixo para cima (container principal)
+                        setTimeout(() => {
+                            elements.itemName.focus({ preventScroll: true });
+                            const scroller = elements.mainScreen;
+                            if (scroller && typeof scroller.scrollTo === 'function') {
+                                scroller.scrollTo({ top: 0, behavior: 'smooth' });
+                            } else {
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }
+                        }, 50);
+                    }
+                    li.classList.remove('show-edit');
+                    content.style.transform = 'translateX(0)';
+                } else if (mouseDeltaX > 40) {
+                    li.classList.add('show-edit');
+                    li.querySelector('.item-content').style.transform = 'translateX(80px)';
                 } else {
-                    li.classList.remove('swipe-left', 'swipe-right');
-                    li.style.transform = `translateX(0)`;
+                    li.classList.remove('show-trash', 'show-edit');
+                    content.style.transform = 'translateX(0)';
                 }
             }
             isMouseDown = false;
+            setTimeout(() => {
+                li.querySelector('.item-content').style.transition = '';
+            }, 250);
         });
 
         li.addEventListener('mouseleave', () => {
-            if (isMouseDown) { // Se o mouse sair enquanto arrasta, resetar
-                li.style.transition = 'transform 0.2s ease-out';
-                li.classList.remove('swipe-left', 'swipe-right');
-                li.style.transform = `translateX(0)`;
+            if (isMouseDown) {
+                const content = li.querySelector('.item-content');
+                content.style.transition = 'transform 0.2s ease-out';
+                li.classList.remove('show-left', 'show-right');
+                content.style.transform = 'translateX(0)';
             }
             isMouseDown = false;
         });
 
 
-        // Eventos dos botões de ação
-        li.querySelector('.item-checkbox').addEventListener('change', async (e) => {
-            const itemId = parseInt(e.target.dataset.id);
-            const isCompleted = e.target.checked;
-            await updateItem(itemId, { concluido: isCompleted });
-        });
-
-        li.querySelector('.edit-btn').addEventListener('click', (e) => {
-            const itemId = parseInt(e.currentTarget.dataset.id);
-            const itemToEdit = shoppingList.find(i => i.id === itemId);
-            if (itemToEdit) {
-                editingItem = itemToEdit;
-                elements.itemName.value = itemToEdit.nome;
-                elements.itemQuantity.value = itemToEdit.quantidade;
-                elements.itemPrice.value = itemToEdit.preco;
-                selectedCategory = itemToEdit.categoria || 'geral'; // Define a categoria selecionada
-                updateCategoryButtonText(selectedCategory);
-                elements.addItemBtn.textContent = 'Salvar Edição';
-                elements.addItemBtn.classList.add('btn-warning');
-                showNotification('Editando item...', 'info');
-            }
-        });
-
-        li.querySelector('.delete-btn').addEventListener('click', (e) => {
-            const itemId = parseInt(e.currentTarget.dataset.id);
-            deleteItem(itemId);
-        });
+        // Eventos dos botões de ação (removidos, pois agora só existe swipe)
+        // li.querySelector('.edit-btn').addEventListener('click', ...);
+        // li.querySelector('.delete-btn').addEventListener('click', ...);
     });
-
     updateSummary();
 }
 
+// Função para deletar com opção de desfazer
+let undoTimeout = null;
+let lastDeletedItem = null;
+async function deleteItemWithUndo(itemId, itemData) {
+    // Remove visualmente da lista
+    const li = elements.shoppingList.querySelector(`li[data-id='${itemId}']`);
+    if (li) li.remove();
+    // Remove do backend
+    await deleteItem(itemId, true); // true = não renderiza lista ainda
+    lastDeletedItem = { ...itemData };
+    showNotificationWithUndo('Item excluído!', async () => {
+        await addItem(lastDeletedItem);
+        await fetchItems(currentListId);
+        renderShoppingList();
+    });
+    // Após 5s, limpa o undo
+    clearTimeout(undoTimeout);
+    undoTimeout = setTimeout(() => {
+        lastDeletedItem = null;
+    }, 5000);
+}
+
+function showNotificationWithUndo(message, onUndo) {
+    const notification = document.createElement('div');
+    notification.classList.add('notification', 'info', 'show');
+    notification.innerHTML = `
+        <span class="icon"><i class="fas fa-info-circle"></i></span>
+        <span class="message">${message}</span>
+        <button class="undo-btn">Desfazer</button>
+        <button class="close-btn">&times;</button>
+    `;
+    elements.notificationContainer.appendChild(notification);
+    notification.querySelector('.undo-btn').addEventListener('click', () => {
+        if (onUndo) onUndo();
+        notification.remove();
+    });
+    notification.querySelector('.close-btn').addEventListener('click', () => {
+        notification.remove();
+    });
+    setTimeout(() => {
+        if (document.body.contains(notification)) notification.remove();
+    }, 5000);
+}
+
+// Funções de Resumo e Atualização de UI
 function updateSummary() {
     const totalItemsCount = shoppingList.length;
     const completedItemsCount = shoppingList.filter(item => item.concluido).length;
@@ -636,7 +744,7 @@ const categoriaPorPalavra = [
 
 function detectarCategoriaAutomatica(nomeItem) {
     const nome = nomeItem.toLowerCase().trim();
-    
+
     for (const grupo of categoriaPorPalavra) {
         for (const palavra of grupo.palavras) {
             // Usar regex para match mais preciso

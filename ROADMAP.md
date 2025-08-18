@@ -1,316 +1,164 @@
-# 🗺️ ROADMAP - Lista de Compras
-## Plano de Desenvolvimento e Melhorias
+# Roadmap e Mapa do Projeto
 
-### 📋 **OVERVIEW DO PROJETO**
-- **Projeto Atual**: Lista de Compras (Node.js + Express + PostgreSQL)
-- **Linha do Tempo**: 3-6 meses
-- **Objetivo**: Modernizar e profissionalizar a aplicação
-- **Prioridade**: Qualidade > Velocidade
+Este documento consolida o status atual do projeto, o roadmap com próximos passos e o mapeamento da estrutura do repositório.
 
----
+## Visão geral
 
-## 🎯 **FASE 1: FUNDAÇÃO (Semanas 1-2)**
-*Preparar terreno para melhorias futuras*
-
-### ✅ **1.1 Setup de Docker** 
-**Prioridade**: 🔥 ALTA  
-**Esforço**: 🟡 Baixo (4-8 horas)  
-**Dependências**: Nenhuma
-
-**Tarefas:**
-- [ ] Criar Dockerfile para aplicação Node.js
-- [ ] Configurar docker-compose.yml (app + PostgreSQL)
-- [ ] Criar .dockerignore
-- [ ] Testar build e execução local
-- [ ] Documentar comandos no README
-
-**Entregáveis:**
-- ✅ Aplicação rodando em container
-- ✅ Banco PostgreSQL containerizado
-- ✅ Scripts de deploy automatizado
-
-**Critérios de Sucesso:**
-- `docker-compose up` executa toda aplicação
-- Dados persistem entre restarts
-- Performance igual ou melhor que versão atual
+Aplicativo de lista de compras com backend Node.js/Express e PostgreSQL, frontend web responsivo (HTML/CSS/JS) e base para PWA. Possui multi-tenant por dispositivo (deviceId), CRUD de listas/itens, filtros, categorias, sumário e interações por gesto (swipe) com desfazer.
 
 ---
 
-### ✅ **1.2 Organização do Código**
-**Prioridade**: 🔥 ALTA  
-**Esforço**: 🟡 Baixo (6-10 horas)  
-**Dependências**: Nenhuma
+## Mapa da estrutura do projeto
 
-**Tarefas:**
-- [ ] Separar rotas em arquivos (controllers/)
-- [ ] Criar middleware personalizado (middlewares/)
-- [ ] Separar lógica de banco (models/ ou services/)
-- [ ] Configurar estrutura de pastas padrão
-- [ ] Adicionar .env.example
-
-**Estrutura Proposta:**
-```
-src/
-├── controllers/     # Lógica das rotas
-├── middlewares/     # Middlewares customizados
-├── models/         # Interação com banco
-├── services/       # Lógica de negócio
-├── utils/          # Funções utilitárias
-└── app.js          # Entry point
-```
-
----
-
-## 🧪 **FASE 2: QUALIDADE (Semanas 3-4)**
-*Implementar testes e garantir estabilidade*
-
-### ✅ **2.1 Setup de Testes**
-**Prioridade**: 🔥 ALTA  
-**Esforço**: 🟠 Médio (12-16 horas)  
-**Dependências**: Fase 1.2 concluída
-
-**Tarefas:**
-- [ ] Instalar Jest + Supertest
-- [ ] Configurar ambiente de teste
-- [ ] Criar banco de teste separado
-- [ ] Setup de CI/CD básico (GitHub Actions)
-- [ ] Configurar coverage reports
-
-**Ferramentas:**
-```json
-{
-  "devDependencies": {
-    "jest": "^29.0.0",
-    "supertest": "^6.3.0",
-    "@types/jest": "^29.0.0"
-  }
-}
-```
-
----
-
-### ✅ **2.2 Testes da API**
-**Prioridade**: 🔥 ALTA  
-**Esforço**: 🟠 Médio (16-20 horas)  
-**Dependências**: Fase 2.1 concluída
-
-**Cobertura de Testes:**
-- [ ] **Unit Tests**: Funções utilitárias (utils/)
-- [ ] **Integration Tests**: Endpoints da API
-- [ ] **E2E Tests**: Fluxos completos do usuário
-
-**Endpoints Prioritários:**
-1. `POST /api/listas` - Criar lista
-2. `GET /api/listas` - Buscar listas
-3. `POST /api/listas/:id/itens` - Adicionar item
-4. `PUT /api/itens/:id` - Atualizar item
-5. `DELETE /api/itens/:id` - Excluir item
-
-**Meta**: 80%+ de cobertura de código
-
----
-
-## 🔧 **FASE 3: MODERNIZAÇÃO (Semanas 5-8)**
-*Adicionar TypeScript e melhorar DX*
-
-### ✅ **3.1 Migração para TypeScript**
-**Prioridade**: 🟠 MÉDIA  
-**Esforço**: 🔴 Alto (20-30 horas)  
-**Dependências**: Fase 2 concluída
-
-**Estratégia de Migração:**
-1. **Semana 5**: Setup inicial + configuração
-2. **Semana 6**: Migrar models e interfaces
-3. **Semana 7**: Migrar controllers e services
-4. **Semana 8**: Migrar testes e refinamentos
-
-**Tarefas:**
-- [ ] Setup TypeScript + ts-node
-- [ ] Configurar tsconfig.json
-- [ ] Criar interfaces principais (ShoppingItem, ShoppingList, etc.)
-- [ ] Migrar gradualmente arquivo por arquivo
-- [ ] Atualizar testes para TypeScript
-- [ ] Configurar build process
-
----
-
-### ✅ **3.2 Melhoria da API**
-**Prioridade**: 🟠 MÉDIA  
-**Esforço**: 🟡 Baixo (8-12 horas)  
-**Dependências**: Fase 3.1 em andamento
-
-**Tarefas:**
-- [ ] Adicionar validação de entrada (Joi/Zod)
-- [ ] Implementar rate limiting
-- [ ] Melhorar tratamento de erros
-- [ ] Adicionar logs estruturados (Winston)
-- [ ] Implementar health check endpoint
-
-**Novos Endpoints:**
-- `GET /health` - Status da aplicação
-- `GET /api/stats` - Estatísticas de uso
-
----
-
-## 🎨 **FASE 4: FRONTEND MODERNO (Semanas 9-12)**
-*Opcional: Modernizar interface do usuário*
-
-### ✅ **4.1 Avaliação do Frontend**
-**Prioridade**: 🟡 BAIXA  
-**Esforço**: 🟡 Baixo (4-6 horas)  
-**Dependências**: Fases anteriores estáveis
-
-**Decisão: React vs Melhoria Atual**
-- [ ] Analisar complexidade atual do JavaScript
-- [ ] Avaliar necessidade real de framework
-- [ ] Decidir entre refatoração ou reescrita
-
-**Opção A: Melhorar JS Atual**
-- Modularizar script.js atual
-- Implementar padrões modernos
-- Adicionar TypeScript no frontend
-
-**Opção B: Migrar para React**
-- Setup React + TypeScript
-- Componentização da interface
-- Estado gerenciado (Context API)
-
----
-
-## 🚀 **FASE 5: DEPLOY E MONITORAMENTO (Semanas 13-16)**
-*Preparar para produção*
-
-### ✅ **5.1 Deploy em Produção**
-**Prioridade**: 🔥 ALTA  
-**Esforço**: 🟠 Médio (12-16 horas)  
-**Dependências**: Todas as fases anteriores
-
-**Tarefas:**
-- [ ] Configurar servidor (DigitalOcean/AWS/Heroku)
-- [ ] Setup HTTPS (Let's Encrypt)
-- [ ] Configurar domínio
-- [ ] Implementar backup automático do banco
-- [ ] Setup monitoramento (logs, uptime)
-
----
-
-### ✅ **5.2 CI/CD Pipeline**
-**Prioridade**: 🟠 MÉDIA  
-**Esforço**: 🟠 Médio (10-14 horas)  
-**Dependências**: Fase 5.1 concluída
-
-**Pipeline GitHub Actions:**
-1. **Pull Request**: Testes + Lint
-2. **Merge to Main**: Deploy automático
-3. **Releases**: Versionamento automático
-
----
-
-## 📊 **CRONOGRAMA VISUAL**
+Estrutura atual e propósito de cada parte:
 
 ```
-Semana  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16
-Docker  ██ ██
-Código  ██ ██
-Testes     ██ ██
-TypeS         ██ ██ ██ ██
-Front               ██ ██ ██ ██
-Deploy                        ██ ██ ██ ██
+.
+├─ app.js                         # Servidor Express: API REST, conexão PostgreSQL, serve arquivos estáticos
+├─ package.json                   # Metadados do projeto, scripts, dependências
+├─ README.md                      # Documentação principal (instalação, uso, deploy)
+├─ LICENSE                        # Licença do projeto
+├─ copilot-tasks.js               # Rascunho/TO-Dos de melhorias e ideias
+├─ db/
+│  └─ banco_de_dados.sql         # Script SQL de criação/migração do banco (tabelas listas, itens, etc.)
+├─ public/
+│  ├─ index.html                  # UI principal da aplicação
+│  ├─ 404.html                    # Página 404
+│  ├─ manifest.json               # Manifest PWA (ícones, nome, cores)
+│  ├─ service-worker.js           # Service Worker (base para cache/offline)
+│  ├─ assets/
+│  │  └─ icons/
+│  │     └─ icon-192.png         # Ícone PWA (exemplo)
+│  ├─ css/
+│  │  └─ style.css               # Estilos da aplicação (layout, responsivo, swipe, notificações)
+│  └─ js/
+│     └─ script.js               # Lógica de frontend: CRUD, UI, swipe, notificações, deviceId, fetch API
 ```
 
----
-
-## 🎯 **MILESTONES**
-
-### 🏁 **Milestone 1** (Semana 2): Base Sólida
-- ✅ Docker funcionando
-- ✅ Código organizado
-- ✅ Deploy automatizado
-
-### 🏁 **Milestone 2** (Semana 4): Qualidade Garantida
-- ✅ Testes implementados
-- ✅ CI/CD básico
-- ✅ Coverage > 80%
-
-### 🏁 **Milestone 3** (Semana 8): Código Moderno
-- ✅ TypeScript implementado
-- ✅ API melhorada
-- ✅ Documentação atualizada
-
-### 🏁 **Milestone 4** (Semana 12): UX Aprimorada
-- ✅ Frontend modernizado
-- ✅ Performance otimizada
-- ✅ Acessibilidade melhorada
-
-### 🏁 **Milestone 5** (Semana 16): Produção Ready
-- ✅ Deploy em produção
-- ✅ Monitoramento ativo
-- ✅ Backup automatizado
+Notas:
+- O backend expõe endpoints REST para listas e itens (com escopo por deviceId), além de servir o frontend estático (pasta `public/`).
+- O frontend utiliza localStorage para `deviceId`, Font Awesome para ícones e `fetch` para comunicação com a API.
+- O banco usa PostgreSQL (Neon compatível). As exclusões de listas removem itens via CASCADE, e há suporte à tabela de palavras aprendidas (upsert em operações de itens).
 
 ---
 
-## ⚠️ **RISCOS E MITIGAÇÕES**
+## Status atual por área (com porcentagens)
 
-| Risco | Probabilidade | Impacto | Mitigação |
-|-------|---------------|---------|-----------|
-| Breaking changes no TypeScript | Alta | Médio | Migração gradual + testes |
-| Complexidade do Docker | Baixa | Alto | Documentação detalhada |
-| Tempo de desenvolvimento | Média | Alto | Priorizar funcionalidades core |
-| Performance degradation | Baixa | Médio | Testes de performance |
+Legenda: [✅ 100%] concluído, valores menores indicam progresso parcial.
 
----
+### Backend (API/DB)
+- [✅ 100%] Estrutura Express + rotas REST básicas (listas/itens)
+- [✅ 100%] Escopo por dispositivo (deviceId) em todas as rotas de listas (GET/POST/PUT/DELETE)
+- [✅ 100%] Validação e proteção contra `req.body` indefinido (desestruturação segura + mensagens de erro claras)
+- [✅ 100%] CRUD de itens (inclui limpa concluídos/limpa todos)
+- [✅ 85%] Integração com tabela de palavras aprendidas (upsert em add/update de item) — base pronta; explorar uso no frontend
+- [✅ 90%] Conexão PostgreSQL via `DATABASE_URL` (.env/Render/Neon) — robustez adicional (retries/backoff/healthcheck) sugerida
+- [✅ 80%] Tratamento de erros (500 handler e 404) — padronizar payloads e códigos por caso comum
+- [✅ 0%] Observabilidade (logs estruturados, correlação por request, métricas) — sugerido
 
-## 📋 **CHECKLIST DE CADA FASE**
+### Frontend (UI/UX)
+- [✅ 100%] Geração e persistência de deviceId no localStorage
+- [✅ 100%] CRUD de listas com deviceId propagado (create/rename/delete)
+- [✅ 100%] CRUD de itens (nome, categoria, quantidade, preço)
+- [✅ 100%] Notificações com botão fechar e transição suave
+- [✅ 90%] UI responsiva (layouts, tipografia, cards, grids)
+- [✅ 92%] Gestos de swipe: revelar ações (editar/Excluir), apagar com deslize completo e opção de Desfazer; ícones atrás do item e visíveis apenas quando ativados
+- [✅ 85%] Edição via deslize à direita — agora abre o modo edição com foco automático e scroll de baixo para cima até o formulário
+- [✅ 80%] Filtros e sumário (contagens, totais) — funcional; possível evoluir UI/UX
+- [✅ 80%] Modal de categorias e seleção assistida — pode ganhar autocomplete/sugestões
 
-### Antes de iniciar qualquer fase:
-- [ ] Fazer backup do código atual
-- [ ] Criar branch específica da feature
-- [ ] Documentar estado atual
-- [ ] Definir critérios de sucesso
+### PWA e Entrega
+- [✅ 50%] Manifest PWA e ícones básicos
+- [✅ 30%] Service Worker — base presente, faltam estratégias de cache e modo offline/fila
+- [✅ 80%] Deploy Render (docs e env) — operacional; automações CI/CD podem evoluir
 
-### Ao finalizar cada fase:
-- [ ] Executar todos os testes
-- [ ] Fazer code review
-- [ ] Atualizar documentação
-- [ ] Merge para main
-- [ ] Tag de release
-
----
-
-## 🛠️ **FERRAMENTAS NECESSÁRIAS**
-
-### Desenvolvimento:
-- Node.js 18+
-- Docker & Docker Compose
-- Visual Studio Code
-- Git
-
-### Testes:
-- Jest (Unit/Integration)
-- Supertest (API testing)
-- Playwright (E2E - opcional)
-
-### TypeScript:
-- typescript
-- @types/node
-- ts-node
-- nodemon
-
-### Deploy:
-- GitHub Actions
-- DigitalOcean/AWS/Heroku
-- PostgreSQL Cloud
+### Qualidade, DevEx e Segurança
+- [✅ 0%] Testes unitários (backend e frontend)
+- [✅ 0%] Testes E2E (fluxos críticos)
+- [✅ 0%] Lint/Format (ESLint, Prettier) com checagem em CI
+- [✅ 0%] Tipagem (TypeScript/JSDoc) — iniciar pelos módulos públicos
+- [✅ 0%] CI (GitHub Actions): build, lint, testes, deploy
+- [✅ 20%] Documentação — README profissional e este ROADMAP; adicionar guias de contribuição
+- [✅ 0%] Segurança: validação de input adicional, rate-limit, helmet, CORS restritivo por ambiente
 
 ---
 
-## 📚 **RECURSOS DE APRENDIZADO**
+## Roadmap proposto (próximos passos)
 
-- [Docker for Node.js](https://nodejs.org/en/docs/guides/nodejs-docker-webapp/)
-- [Jest Testing Guide](https://jestjs.io/docs/getting-started)
-- [TypeScript Handbook](https://www.typescriptlang.org/docs/)
-- [Node.js Best Practices](https://github.com/goldbergyoni/nodebestpractices)
+Curto prazo (1–2 sprints)
+- Frontend/UX
+  - [ ] Refinar thresholds/animações do swipe; micro bounce no parcial e highlight do ícone ativo [✅ 0%]
+  - [ ] Paridade/ajustes finos no gesto para desktop (mouse drag) [✅ 50%]
+  - [ ] Acessibilidade: foco/aria-labels, contraste e navegação por teclado [✅ 0%]
+  - [ ] Ajustes de performance (evitar reflows/repinturas desnecessárias no swipe) [✅ 0%]
+- Backend
+  - [ ] Padronização de erros (códigos e mensagens), DTOs de resposta [✅ 0%]
+  - [ ] Retries/backoff na conexão com DB e healthcheck endpoint [✅ 0%]
+- PWA
+  - [ ] Service Worker: cache-first para estáticos e network-first com fallback para API [✅ 0%]
+  - [ ] Modo offline com fila (Background Sync) e replay de requisições [✅ 0%]
+- Qualidade/DevEx
+  - [ ] Configurar ESLint + Prettier e script de lint [✅ 0%]
+  - [ ] Testes unitários mínimos (2-3 casos por camada) [✅ 0%]
+  - [ ] GitHub Actions: CI para lint e testes [✅ 0%]
+
+Médio prazo (3–5 sprints)
+- Funcionalidades
+  - [ ] Autocomplete de categorias (com base em “palavras aprendidas”) [✅ 0%]
+  - [ ] Importação/exportação de listas (CSV/JSON) [✅ 0%]
+  - [ ] Multi-listas com compartilhamento (link/token) [✅ 0%]
+  - [ ] Histórico e duplicação de listas [✅ 0%]
+- Observabilidade e Segurança
+  - [ ] Logs estruturados (pino/winston) e correlação por request [✅ 0%]
+  - [ ] Rate limiting, Helmet e CORS por ambiente [✅ 0%]
+- PWA
+  - [ ] Prompt “Adicionar à tela inicial” customizado [✅ 0%]
+  - [ ] Ícones adicionais (512px) e splash screens [✅ 0%]
+
+Longo prazo
+- [ ] Tipagem gradual (TypeScript ou JSDoc com verificação) [✅ 0%]
+- [ ] E2E (Playwright/Cypress) cobrindo fluxos principais (criar lista, adicionar item, swipe, desfazer) [✅ 0%]
+- [ ] i18n (pt-BR/en) [✅ 0%]
+- [ ] Analytics opcional e anônimo (consentimento) [✅ 0%]
 
 ---
 
-**🎉 RESULTADO FINAL:**
-Uma aplicação moderna, testada, tipada e pronta para produção, com deploy automatizado e monitoramento ativo!
+## Métricas de conclusão (resumo)
+
+- Backend/API: [✅ 90%]
+- Frontend/UI/UX: [✅ 88%]
+- PWA/Offline: [✅ 40%]
+- Qualidade/DevEx: [✅ 10%]
+- Documentação: [✅ 70%]
+
+Observação: valores estimados com base no estado atual e nas melhorias listadas.
+
+---
+
+## Riscos e pontos de atenção
+- Confiabilidade de rede: melhorar resiliência a falhas de DB e latência (retries/backoff/timeout).
+- Consistência de UI/UX entre touch e mouse: alinhar comportamentos e thresholds.
+- Evolução de schema: planejar migrações versionadas (ferramenta de migrations) e backups.
+- Segurança: sanitização e limites em inputs; proteção contra abuso; segredos apenas via env.
+
+---
+
+## Tarefas técnicas sugeridas (checklist rápido)
+- [ ] Adicionar ESLint/Prettier e padronizar estilo
+- [ ] Configurar Actions de CI (lint/test) e CD (Render) por branch
+- [ ] Testes unitários mínimos (services/handlers de itens e listas)
+- [ ] Playwright para 2–3 cenários críticos E2E
+- [ ] Service Worker com estratégias de cache e modo offline
+- [ ] Telemetria básica (logs estruturados) e rate-limiting
+- [ ] Melhorias de acessibilidade e performance (Lighthouse)
+
+---
+
+## Como contribuir
+- Issues: priorize bugs e UX
+- PRs: pequenos, com descrição clara e, quando aplicável, passos de teste
+- Padrões: seguir lint/format (após configuração) e cobrir casos principais
+
+---
+
+Atualizado em: 2025-08-17 (swipe refinado: ícones só quando ativados; edição com foco + scroll para cima)

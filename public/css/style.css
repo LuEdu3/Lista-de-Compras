@@ -221,16 +221,14 @@ body {
 }
 
 .shopping-list li {
-    background-color: var(--surface);
-    padding: 15px;
+    position: relative;
+    overflow: hidden; /* Esconde os ícones que ficam fora */
+    z-index: 1;
+    background: var(--surface);
+    padding: 0;
     margin-bottom: 10px;
     border-radius: var(--border-radius);
     box-shadow: var(--shadow-light);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    position: relative;
-    transition: transform 0.2s ease-out;
 }
 
 .shopping-list li.completed {
@@ -240,15 +238,8 @@ body {
     color: var(--text-secondary);
 }
 
-.shopping-list li.swipe-left {
-    transform: translateX(-80px);
-    /* Adjust based on icon width */
-}
-
-.shopping-list li.swipe-right {
-    transform: translateX(80px);
-    /* Adjust based on icon width */
-}
+/* Remove as regras de swipe do li - agora só o item-content move */
+/* .shopping-list li.swipe-left e .shopping-list li.swipe-right removidas */
 
 .item-actions {
     position: absolute;
@@ -1095,4 +1086,84 @@ body {
 .create-list-modal .input-group {
     margin-bottom: 20px;
     /* Ajuste o valor conforme desejar */
+}
+
+.item {
+    position: relative;
+    overflow: hidden;
+    /* Removido min-height e height para manter o tamanho original */
+    border-radius: 12px;
+    margin-bottom: 12px;
+    box-shadow: var(--shadow-light);
+    background: #fff;
+    display: flex;
+    align-items: center;
+    padding: 0 0.5rem;
+}
+
+.item-content {
+    z-index: 1;
+    position: relative;
+}
+
+.item .item-content {
+    position: relative;
+    z-index: 2;
+    background: #fff;
+    border-radius: 12px;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    box-sizing: border-box;
+    transition: transform 0.2s ease-out;
+}
+
+.swipe-trash, .swipe-edit {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    opacity: 0; /* Oculto por padrão */
+    pointer-events: none; /* Não interativo por padrão */
+    transition: all 0.2s;
+    z-index: 1; /* atrás do item-content que tem z-index: 2 */
+}
+.swipe-trash {
+    right: 0; /* Lixeira do lado direito para aparecer ao arrastar p/ esquerda */
+    background: var(--danger-color);
+    color: #fff;
+    border-radius: 0 12px 12px 0;
+}
+.swipe-edit {
+    left: 0; /* Editar do lado esquerdo para aparecer ao arrastar p/ direita */
+    background: var(--secondary-color);
+    color: #fff;
+    border-radius: 12px 0 0 12px;
+}
+.item-content {
+    position: relative;
+    z-index: 2; /* na frente dos ícones */
+    background: #fff;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    box-sizing: border-box;
+    transition: transform 0.2s ease-out; /* Só o conteúdo move */
+    border-radius: var(--border-radius);
+}
+.item.show-trash .swipe-trash {
+    opacity: 1;
+    pointer-events: auto;
+}
+.item.show-edit .swipe-edit {
+    opacity: 1;
+    pointer-events: auto;
 }
